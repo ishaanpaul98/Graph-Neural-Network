@@ -6,7 +6,7 @@ from torch import nn, optim
 from torch_geometric.utils import structured_negative_sampling
 from torch_geometric.nn.conv.gcn_conv import gcn_norm
 from torch_geometric.nn import LGConv
-
+from sklearn.model_selection import train_test_split
 import pandas as pd
 import torch
 
@@ -150,7 +150,7 @@ def get_metrics(model, edge_index, exclude_edge_indices):
 
 def test(model, edge_index, exclude_edge_indices):
     emb_users_final, emb_users, emb_items_final, emb_items = model.forward(edge_index)
-    user_indices, pos_item_indices, neg_item_indices = structured_negative_sampling(edge_index, contains_neg_self_loops=False)
+    user_indices, pos_item_indices, ne g_item_indices = structured_negative_sampling(edge_index, contains_neg_self_loops=False)
 
     emb_users_final, emb_users = emb_users_final[user_indices], emb_users[user_indices]
 
@@ -163,46 +163,113 @@ def test(model, edge_index, exclude_edge_indices):
 
     return loss, recall, ndcg
 
-def training(num_users, num_items, train_index, BATCH_SIZE = 1024):
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
+def training(BATCH_SIZE = 1024, NUM_EPOCHS = 100, PATH='model.pt'):
+    train_index, train_edge_index, test_edge_index, val_edge_index, num_users, num_items = getEdgeIndices()
     model = LightGCN(num_users, num_items)
     model = model.to(device)
-    edge_index = edge_index.to(device)
-    train_edge_index = train_edge_index.to(device)
-    val_edge_index = val_edge_index.to(device)
-
     optimizer = optim.Adam(model.parameters(), lr=0.001)
-
     n_batch = int(len(train_index)/BATCH_SIZE)
 
-    for epoch in range(31):
+    for epoch in range(NUM_EPOCHS):
         model.train()
 
-    for _ in range(n_batch):
-        optimizer.zero_grad()
+        for _ in range(n_batch):
+            optimizer.zero_grad()
 
-        emb_users_final, emb_users, emb_items_final, emb_items = model.forward(train_edge_index)
+            emb_users_final, emb_users, emb_items_final, emb_items = model.forward(train_edge_index)
 
-        user_indices, pos_item_indices, neg_item_indices = sample_mini_batch(train_edge_index)
-        
-        emb_users_final, emb_users = emb_users_final[user_indices], emb_users[user_indices]
-        emb_pos_items_final, emb_pos_items = emb_items_final[pos_item_indices], emb_items[pos_item_indices]
-        emb_neg_items_final, emb_neg_items = emb_items_final[neg_item_indices], emb_items[neg_item_indices]
+            user_indices, pos_item_indices, neg_item_indices = sample_mini_batch(train_edge_index)
 
-        train_loss = bpr_loss(emb_users_final, emb_users, emb_pos_items_final, emb_pos_items, emb_neg_items_final, emb_neg_items)
+            emb_users_final, emb_users = emb_users_final[user_indices], emb_users[user_indices]
+            emb_pos_items_final, emb_pos_items = emb_items_final[pos_item_indices], emb_items[pos_item_indices]
+            emb_neg_items_final, emb_neg_items = emb_items_final[neg_item_indices], emb_items[neg_item_indices]
 
-        train_loss.backward()
-        optimizer.step()
+            train_loss = bpr_loss(emb_users_final, emb_users, emb_pos_items_final, emb_pos_items, emb_neg_items_final, emb_neg_items)
 
-    if epoch % 5 == 0:
-        model.eval()
-        val_loss, recall, ndcg = test(model, val_edge_index, [train_edge_index])
-        print(f"Epoch {epoch} | Train loss: {train_loss.item():.5f} | Val loss: {val_loss:.5f} | Val recall@{K}: {recall:.5f} | Val ndcg@{K}: {ndcg:.5f}")
+            train_loss.backward()
+            optimizer.step()
+            torch.save({
+                'epoch': epoch,
+                'model_state_dict': model.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+                'loss': train_loss,
+            }, PATH)
+        if epoch % 5 == 0:
+            model.eval()
+            val_loss, recall, ndcg = test(model, val_edge_index, [train_edge_index])
+            print(f"Epoch {epoch} | Train loss: {train_loss.item():.5f} | Val loss: {val_loss:.5f} | Val recall@{K}: {recall:.5f} | Val ndcg@{K}: {ndcg:.5f}")
+    #torch.save(model, 'entire_model.pt', _use_new_zipfile_serialization=False)
+    #return model, train_edge_index, val_edge_index, test_edge_index
 
+def getEdgeIndices():
+    movie_path = '../../Dataset/ml-latest-small/movies.csv'
+    rating_path = '../../Dataset/ml-latest-small/ratings.csv'
+    movies = pd.read_csv(movie_path)
+    ratings = pd.read_csv(rating_path)
+    ratings = ratings.loc[ratings['movieId'].isin(movies['movieId'].unique())]
+    user_mapping = {userid: i for i, userid in enumerate(ratings['userId'].unique())}
+    item_mapping = {isbn: i for i, isbn in enumerate(ratings['movieId'].unique())}
+    # Count users and items
+    num_users = len(user_mapping)
+    num_items = len(item_mapping)
+    num_total = num_users + num_items
+    # Build the adjacency matrix based on user ratings
+    user_ids = torch.LongTensor([user_mapping[i] for i in ratings['userId']])
+    item_ids = torch.LongTensor([item_mapping[i] for i in ratings['movieId']])
+    edge_index = torch.stack((user_ids, item_ids))
+    # Create training, validation, and test adjacency matrices
+    train_index, test_index = train_test_split(range(len(ratings)), test_size=0.2, random_state=0)
+    val_index, test_index = train_test_split(test_index, test_size=0.5, random_state=0)
+
+    train_edge_index = edge_index[:, train_index]
+    val_edge_index = edge_index[:, val_index]
+    test_edge_index = edge_index[:, test_index]
+
+    return train_index, train_edge_index, test_edge_index, val_edge_index, num_users, num_items
+
+def recommendationForNewUser(model, optimizer, newUser, likedMovieIds, likedRatings):
+    if len(likedRatings) != len(likedMovieIds):
+        print("Each movie needs to be rated!")
+        return
+    #Increase the number of users by 1
+    #model.num_users += 1
+    #Get recommendations 
+    movie_path = '../../Dataset/ml-latest-small/movies.csv'
+    rating_path = '../../Dataset/ml-latest-small/ratings.csv'
+    movies = pd.read_csv(movie_path)
+    ratings = pd.read_csv(rating_path)
+    ratings = ratings.loc[ratings['movieId'].isin(movies['movieId'].unique())]
+    item_mapping = {isbn: i for i, isbn in enumerate(ratings['movieId'].unique())}
+    userList = [newUser for i in likedMovieIds]
+    userTensor = torch.LongTensor(userList)
+    itemTensor = torch.LongTensor([item_mapping[i] for i in likedMovieIds])
+    edge_index = torch.stack((userTensor, itemTensor))
+    model.train()
+    optimizer.zero_grad()
+    emb_users_final, emb_users, emb_items_final, emb_items = model.forward(edge_index)
+    user_indices, pos_item_indices, neg_item_indices = sample_mini_batch(edge_index)
+    emb_users_final, emb_users = emb_users_final[user_indices], emb_users[user_indices]
+    emb_pos_items_final, emb_pos_items = emb_items_final[pos_item_indices], emb_items[pos_item_indices]
+    emb_neg_items_final, emb_neg_items = emb_items_final[neg_item_indices], emb_items[neg_item_indices]
+    train_loss = bpr_loss(emb_users_final, emb_users, emb_pos_items_final, emb_pos_items, emb_neg_items_final, emb_neg_items)
+    train_loss.backward()
+    optimizer.step()
+    
 
 def main():
-    training()
+    #training()
+    #model = torch.load("entire_model.pt", weights_only=False)
+    train_index, train_edge_index, test_edge_index, val_edge_index, num_users, num_items = getEdgeIndices()
+    checkpoint = torch.load('model.pt', weights_only=True)
+    model = LightGCN(num_users, num_items)
+    optimizer = optim.Adam(model.parameters(), lr=0.001)
+    model.load_state_dict(checkpoint['model_state_dict'])
+    optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+    epoch = checkpoint['epoch']
+    loss = checkpoint['loss']
+    test_loss, test_recall, test_ndcg = test(model, test_edge_index.to(device), [train_edge_index, val_edge_index])
+    print(f"Test loss: {test_loss:.5f} | Test recall@{K}: {test_recall:.5f} | Test ndcg@{K}: {test_ndcg:.5f}")
+    recommendationForNewUser(model, optimizer, 91254, [318, 4776, 76093], [9, 10, 7])
 
 if __name__ == "__main__":
     main()
