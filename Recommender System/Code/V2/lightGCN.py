@@ -150,7 +150,7 @@ def get_metrics(model, edge_index, exclude_edge_indices):
 
 def test(model, edge_index, exclude_edge_indices):
     emb_users_final, emb_users, emb_items_final, emb_items = model.forward(edge_index)
-    user_indices, pos_item_indices, ne g_item_indices = structured_negative_sampling(edge_index, contains_neg_self_loops=False)
+    user_indices, pos_item_indices, neg_item_indices = structured_negative_sampling(edge_index, contains_neg_self_loops=False)
 
     emb_users_final, emb_users = emb_users_final[user_indices], emb_users[user_indices]
 
@@ -164,7 +164,8 @@ def test(model, edge_index, exclude_edge_indices):
     return loss, recall, ndcg
 
 def training(BATCH_SIZE = 1024, NUM_EPOCHS = 100, PATH='model.pt'):
-    train_index, train_edge_index, test_edge_index, val_edge_index, num_users, num_items = getEdgeIndices()
+    movies, ratings, num_users, num_items, user_ids, item_ids, edge_index = getEdgeIndices()
+    train_index, train_edge_index, test_edge_index, val_edge_index = getTrainTestValIndices(ratings, edge_index)
     model = LightGCN(num_users, num_items)
     model = model.to(device)
     optimizer = optim.Adam(model.parameters(), lr=0.001)
@@ -217,6 +218,10 @@ def getEdgeIndices():
     user_ids = torch.LongTensor([user_mapping[i] for i in ratings['userId']])
     item_ids = torch.LongTensor([item_mapping[i] for i in ratings['movieId']])
     edge_index = torch.stack((user_ids, item_ids))
+    
+    return movies, ratings, num_users, num_items, user_ids, item_ids, edge_index
+
+def getTrainTestValIndices(ratings, edge_index):
     # Create training, validation, and test adjacency matrices
     train_index, test_index = train_test_split(range(len(ratings)), test_size=0.2, random_state=0)
     val_index, test_index = train_test_split(test_index, test_size=0.5, random_state=0)
@@ -225,7 +230,7 @@ def getEdgeIndices():
     val_edge_index = edge_index[:, val_index]
     test_edge_index = edge_index[:, test_index]
 
-    return train_index, train_edge_index, test_edge_index, val_edge_index, num_users, num_items
+    return train_index, train_edge_index, test_edge_index, val_edge_index
 
 def recommendationForNewUser(model, optimizer, newUser, likedMovieIds, likedRatings):
     if len(likedRatings) != len(likedMovieIds):
@@ -234,10 +239,7 @@ def recommendationForNewUser(model, optimizer, newUser, likedMovieIds, likedRati
     #Increase the number of users by 1
     #model.num_users += 1
     #Get recommendations 
-    movie_path = '../../Dataset/ml-latest-small/movies.csv'
-    rating_path = '../../Dataset/ml-latest-small/ratings.csv'
-    movies = pd.read_csv(movie_path)
-    ratings = pd.read_csv(rating_path)
+    movies, ratings, _, _, _, _, _ = getEdgeIndices()
     ratings = ratings.loc[ratings['movieId'].isin(movies['movieId'].unique())]
     item_mapping = {isbn: i for i, isbn in enumerate(ratings['movieId'].unique())}
     userList = [newUser for i in likedMovieIds]
@@ -259,7 +261,8 @@ def recommendationForNewUser(model, optimizer, newUser, likedMovieIds, likedRati
 def main():
     #training()
     #model = torch.load("entire_model.pt", weights_only=False)
-    train_index, train_edge_index, test_edge_index, val_edge_index, num_users, num_items = getEdgeIndices()
+    movies, ratings, num_users, num_items, user_ids, item_ids, edge_index = getEdgeIndices()
+    train_index, train_edge_index, test_edge_index, val_edge_index = getTrainTestValIndices(ratings, edge_index)
     checkpoint = torch.load('model.pt', weights_only=True)
     model = LightGCN(num_users, num_items)
     optimizer = optim.Adam(model.parameters(), lr=0.001)
