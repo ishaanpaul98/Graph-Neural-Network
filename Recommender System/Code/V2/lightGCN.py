@@ -163,9 +163,9 @@ def test(model, edge_index, exclude_edge_indices):
 
     return loss, recall, ndcg
 
-def training(BATCH_SIZE = 1024, NUM_EPOCHS = 100, PATH='model.pt'):
-    movies, ratings, num_users, num_items, user_ids, item_ids, edge_index = getEdgeIndices()
-    train_index, train_edge_index, test_edge_index, val_edge_index = getTrainTestValIndices(ratings, edge_index)
+def training(BATCH_SIZE = 1024, NUM_EPOCHS = 20, PATH='model.pt'):
+    _, ratings, num_users, num_items, _, _, edge_index = getEdgeIndices()
+    train_index, train_edge_index, _, val_edge_index = getTrainTestValIndices(ratings, edge_index)
     model = LightGCN(num_users, num_items)
     model = model.to(device)
     optimizer = optim.Adam(model.parameters(), lr=0.001)
@@ -200,7 +200,6 @@ def training(BATCH_SIZE = 1024, NUM_EPOCHS = 100, PATH='model.pt'):
             val_loss, recall, ndcg = test(model, val_edge_index, [train_edge_index])
             print(f"Epoch {epoch} | Train loss: {train_loss.item():.5f} | Val loss: {val_loss:.5f} | Val recall@{K}: {recall:.5f} | Val ndcg@{K}: {ndcg:.5f}")
     #torch.save(model, 'entire_model.pt', _use_new_zipfile_serialization=False)
-    #return model, train_edge_index, val_edge_index, test_edge_index
 
 def getEdgeIndices():
     movie_path = '../../Dataset/ml-latest-small/movies.csv'
@@ -260,7 +259,6 @@ def recommendationForNewUser(model, optimizer, newUser, likedMovieIds, likedRati
 
 def main():
     #training()
-    #model = torch.load("entire_model.pt", weights_only=False)
     movies, ratings, num_users, num_items, user_ids, item_ids, edge_index = getEdgeIndices()
     train_index, train_edge_index, test_edge_index, val_edge_index = getTrainTestValIndices(ratings, edge_index)
     checkpoint = torch.load('model.pt', weights_only=True)
@@ -272,7 +270,7 @@ def main():
     loss = checkpoint['loss']
     test_loss, test_recall, test_ndcg = test(model, test_edge_index.to(device), [train_edge_index, val_edge_index])
     print(f"Test loss: {test_loss:.5f} | Test recall@{K}: {test_recall:.5f} | Test ndcg@{K}: {test_ndcg:.5f}")
-    recommendationForNewUser(model, optimizer, 91254, [318, 4776, 76093], [9, 10, 7])
+    #recommendationForNewUser(model, optimizer, 91254, [318, 4776, 76093], [9, 10, 7])
 
 if __name__ == "__main__":
     main()
