@@ -16,8 +16,8 @@ class MovieLensDownloader:
         """
         self.dataset_size = dataset_size.lower()
         self.base_url = "https://files.grouplens.org/datasets/movielens"
-        self.dataset_folder = Path("Back End/dataset")
-        self.dataset_folder.mkdir(parents=True, exist_ok=True)
+        self.dataset_folder = Path("dataset")
+        #self.dataset_folder.mkdir(parents=True, exist_ok=True)
         
         # Dataset URLs and names
         self.dataset_info = {
@@ -84,23 +84,70 @@ class MovieLensDownloader:
             print("Dataset not found. Please download it first.")
             return None
         
-        # Read and display basic information about the dataset
-        ratings_file = list(dataset_path.glob('ratings.*'))[0]
-        movies_file = list(dataset_path.glob('movies.*'))[0]
-        
-        ratings_df = pd.read_csv(ratings_file)
-        movies_df = pd.read_csv(movies_file)
-        
-        print("\nDataset Information:")
-        print(f"Total number of ratings: {len(ratings_df)}")
-        print(f"Total number of movies: {len(movies_df)}")
-        print(f"Total number of users: {ratings_df['userId'].nunique()}")
-        print(f"Rating range: {ratings_df['rating'].min()} to {ratings_df['rating'].max()}")
-        
-        return {
-            'ratings': ratings_df,
-            'movies': movies_df
-        }
+        try:
+            # For ml-100k dataset
+            if self.dataset_size == '100k':
+                # Read ratings from u.data
+                ratings_file = dataset_path / 'u.data'
+                if not ratings_file.exists():
+                    raise FileNotFoundError(f"No ratings file found at {ratings_file}")
+                
+                ratings_df = pd.read_csv(ratings_file, sep='\t', header=None,
+                                       names=['userId', 'movieId', 'rating', 'timestamp'])
+                
+                # Read movies from u.item
+                movies_file = dataset_path / 'u.item'
+                if not movies_file.exists():
+                    raise FileNotFoundError(f"No movies file found at {movies_file}")
+                
+                movies_df = pd.read_csv(movies_file, sep='|', header=None, encoding='latin-1',
+                                      names=['movieId', 'title', 'release_date', 'video_release_date',
+                                            'IMDb_URL', 'unknown', 'Action', 'Adventure', 'Animation',
+                                            'Children', 'Comedy', 'Crime', 'Documentary', 'Drama',
+                                            'Fantasy', 'Film-Noir', 'Horror', 'Musical', 'Mystery',
+                                            'Romance', 'Sci-Fi', 'Thriller', 'War', 'Western'])
+            
+            # For other datasets
+            else:
+                # Find ratings file (could be .dat or .csv)
+                ratings_files = list(dataset_path.glob('ratings.*'))
+                if not ratings_files:
+                    raise FileNotFoundError(f"No ratings file found in {dataset_path}")
+                ratings_file = ratings_files[0]
+                
+                # Find movies file (could be .dat or .csv)
+                movies_files = list(dataset_path.glob('movies.*'))
+                if not movies_files:
+                    raise FileNotFoundError(f"No movies file found in {dataset_path}")
+                movies_file = movies_files[0]
+                
+                # Read the files based on their extension
+                if ratings_file.suffix == '.dat':
+                    ratings_df = pd.read_csv(ratings_file, sep='::', engine='python', 
+                                           names=['userId', 'movieId', 'rating', 'timestamp'])
+                else:
+                    ratings_df = pd.read_csv(ratings_file)
+                    
+                if movies_file.suffix == '.dat':
+                    movies_df = pd.read_csv(movies_file, sep='::', engine='python', 
+                                          names=['movieId', 'title', 'genres'])
+                else:
+                    movies_df = pd.read_csv(movies_file)
+            
+            print("\nDataset Information:")
+            print(f"Total number of ratings: {len(ratings_df)}")
+            print(f"Total number of movies: {len(movies_df)}")
+            print(f"Total number of users: {ratings_df['userId'].nunique()}")
+            print(f"Rating range: {ratings_df['rating'].min()} to {ratings_df['rating'].max()}")
+            
+            return {
+                'ratings': ratings_df,
+                'movies': movies_df
+            }
+            
+        except Exception as e:
+            print(f"Error reading dataset files: {str(e)}")
+            return None
 
 def main():
     # Example usage

@@ -35,46 +35,59 @@ class MPGNN(nn.Module):
     """
     Message Passing Graph Neural Network for recommendation systems
     """
-    def __init__(self, num_features, hidden_channels, num_classes, num_layers=2, dropout=0.2):
+    def __init__(self, num_user_features, num_movie_features, hidden_channels, num_classes, num_layers=2, dropout=0.2):
         super(MPGNN, self).__init__()
         
         self.num_layers = num_layers
         self.dropout = dropout
         
-        # Input layer
-        self.conv1 = GNNConv(num_features, hidden_channels)
+        # User and movie feature transformations
+        self.user_lin = nn.Linear(num_user_features, hidden_channels)
+        self.movie_lin = nn.Linear(num_movie_features, hidden_channels)
         
-        # Hidden layers
+        # Message passing layers
         self.conv_layers = nn.ModuleList([
             GNNConv(hidden_channels, hidden_channels)
-            for _ in range(num_layers - 1)
+            for _ in range(num_layers)
         ])
         
-        # Output layer
-        self.lin = nn.Linear(hidden_channels, num_classes)
+        # Edge prediction layer
+        self.edge_lin = nn.Linear(hidden_channels * 2, num_classes)
         
-    def forward(self, x, edge_index):
-        # First layer
-        x = self.conv1(x, edge_index)
-        x = F.relu(x)
-        x = F.dropout(x, p=self.dropout, training=self.training)
+    def forward(self, x_user, x_movie, edge_index):
+        # Transform user and movie features
+        x_user = self.user_lin(x_user)
+        x_movie = self.movie_lin(x_movie)
         
-        # Hidden layers
+        # Combine features
+        x = torch.cat([x_user, x_movie], dim=0)
+        
+        # Message passing layers
         for conv in self.conv_layers:
             x = conv(x, edge_index)
             x = F.relu(x)
             x = F.dropout(x, p=self.dropout, training=self.training)
         
-        # Output layer
-        x = self.lin(x)
+        # Get user and movie embeddings
+        user_emb = x[:x_user.size(0)]
+        movie_emb = x[x_user.size(0):]
         
-        return x
+        # Get edge embeddings by concatenating user and movie embeddings
+        edge_emb = torch.cat([
+            user_emb[edge_index[0]],
+            movie_emb[edge_index[1]]
+        ], dim=1)
+        
+        # Predict edge ratings
+        out = self.edge_lin(edge_emb)
+        
+        return out
     
-    def predict(self, x, edge_index):
+    def predict(self, x_user, x_movie, edge_index):
         """
         Make predictions for recommendation
         """
         self.eval()
         with torch.no_grad():
-            out = self.forward(x, edge_index)
+            out = self.forward(x_user, x_movie, edge_index)
             return torch.sigmoid(out)  # For binary classification/recommendation 
