@@ -1,139 +1,139 @@
-import os
+from flask import Flask, request, jsonify
+from flask_cors import CORS
 import torch
+import json
+import os
 import numpy as np
-import pandas as pd
-from torch_geometric.data import Data
-from torch_geometric.loader import DataLoader
-from sklearn.model_selection import train_test_split
+from typing import List, Dict
 from NN.mpgnn import MPGNN
 from Dataset.download_movielens import MovieLensDownloader
-from pathlib import Path
 
-def load_movielens_data(dataset_size='100k'):
+app = Flask(__name__)
+CORS(app)  # Enable CORS for all routes
+
+# Initialize the model and load mappings
+MODEL_PATH = os.path.join('models', 'mpgnn_model.pth')
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+# Load the MovieLens data to get mappings and features
+downloader = MovieLensDownloader('100k')
+dataset_path = downloader.download()
+data = downloader.get_dataset_info()
+ratings_df = data['ratings']
+movies_df = data['movies']
+
+# Create user and movie mappings
+user_mapping = {user_id: idx for idx, user_id in enumerate(ratings_df['userId'].unique())}
+movie_mapping = {movie_id: idx for idx, movie_id in enumerate(ratings_df['movieId'].unique())}
+movie_mapping_reverse = {idx: movie_id for movie_id, idx in movie_mapping.items()}
+
+# Create movie title to ID mapping
+movie_title_to_id = {row['title']: row['movieId'] for _, row in movies_df.iterrows()}
+
+# Initialize model
+num_users = len(user_mapping)
+num_movies = len(movie_mapping)
+num_user_features = num_users  # One-hot encoding
+num_movie_features = 19  # Number of genre features
+hidden_channels = 64
+num_classes = 1
+
+model = MPGNN(
+    num_user_features=num_user_features,
+    num_movie_features=num_movie_features,
+    hidden_channels=hidden_channels,
+    num_classes=num_classes
+)
+model.load_state_dict(torch.load(MODEL_PATH, map_location=device))
+model.eval()
+
+def prepare_model_input(movie_ids: List[int]) -> tuple:
     """
-    Load and preprocess MovieLens dataset
+    Prepare input tensors for the model
     """
-    # Initialize downloader
-    downloader = MovieLensDownloader(dataset_size)
-    
-    # This will only download if not present
-    dataset_path = downloader.download()
-    
-    # Get dataset info
-    data = downloader.get_dataset_info()
-    
-    ratings_df = data['ratings']
-    movies_df = data['movies']
-    
-    # Create user and movie mappings
-    user_mapping = {user_id: idx for idx, user_id in enumerate(ratings_df['userId'].unique())}
-    movie_mapping = {movie_id: idx for idx, movie_id in enumerate(ratings_df['movieId'].unique())}
-    
-    # Convert ratings to edge indices
-    edge_index = torch.tensor([
-        [user_mapping[user] for user in ratings_df['userId']],
-        [movie_mapping[movie] for movie in ratings_df['movieId']]
-    ], dtype=torch.long)
-    
-    # Create node features
-    num_users = len(user_mapping)
-    num_movies = len(movie_mapping)
+    # Create a dummy user (we'll use index 0)
+    user_idx = 0
     
     # Create user features (one-hot encoding)
-    user_features = torch.eye(num_users)
+    user_features = torch.zeros(num_users)
+    user_features[user_idx] = 1
     
-    # Create movie features (using genres for ml-100k)
-    if dataset_size == '100k':
-        # Get genre columns (last 19 columns)
-        genre_columns = movies_df.columns[-19:]
-        movie_features = torch.tensor(movies_df[genre_columns].values, dtype=torch.float)
-    else:
-        # For other datasets, use one-hot encoding
-        movie_features = torch.eye(num_movies)
+    # Get movie features (genres)
+    movie_features = torch.zeros((num_movies, num_movie_features))  # Create tensor for all movies
+    for movie_id in movie_mapping:
+        movie_row = movies_df[movies_df['movieId'] == movie_id].iloc[0]
+        # Convert genre features to float explicitly
+        genre_features = movie_row.iloc[-19:].values.astype(np.float32)
+        movie_features[movie_mapping[movie_id]] = torch.tensor(genre_features, dtype=torch.float)
     
-    # Create edge features (ratings)
-    edge_attr = torch.tensor(ratings_df['rating'].values, dtype=torch.float).view(-1, 1)
+    # Create edge indices for input movies
+    edge_index = torch.tensor([
+        [user_idx] * len(movie_ids),  # Source nodes (user)
+        [movie_mapping[movie_id] for movie_id in movie_ids]  # Target nodes (movies)
+    ], dtype=torch.long)
     
-    # Create PyTorch Geometric Data object
-    data = Data(
-        x_user=user_features,  # User features
-        x_movie=movie_features,  # Movie features
-        edge_index=edge_index,
-        edge_attr=edge_attr,
-        num_users=num_users,
-        num_movies=num_movies
-    )
-    
-    return data, user_mapping, movie_mapping
+    return user_features, movie_features, edge_index
 
-def train_model(data, num_epochs=50, batch_size=256, learning_rate=0.01):
-    """
-    Train the MPGNN model
-    """
-    # Split data into train and test sets
-    train_mask, test_mask = train_test_split(
-        range(data.edge_index.size(1)),
-        test_size=0.2,
-        random_state=42
-    )
-    
-    # Create data loaders
-    train_loader = DataLoader(
-        [data],
-        batch_size=batch_size,
-        shuffle=True
-    )
-    
-    # Initialize model with correct input sizes
-    model = MPGNN(
-        num_user_features=data.x_user.size(1),
-        num_movie_features=data.x_movie.size(1),
-        hidden_channels=64,
-        num_classes=1,
-        num_layers=2
-    )
-    
-    # Initialize optimizer and loss function
-    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-    criterion = torch.nn.MSELoss()
-    
-    # Training loop
-    model.train()
-    for epoch in range(num_epochs):
-        total_loss = 0
-        for batch in train_loader:
-            optimizer.zero_grad()
-            
-            # Forward pass with separate user and movie features
-            out = model(batch.x_user, batch.x_movie, batch.edge_index)
-            
-            # Calculate loss
-            loss = criterion(out, batch.edge_attr)
-            
-            # Backward pass
-            loss.backward()
-            optimizer.step()
-            
-            total_loss += loss.item()
+@app.route('/api/recommend', methods=['POST'])
+def get_recommendations():
+    try:
+        data = request.get_json()
         
-        # Print progress
-        if (epoch + 1) % 5 == 0:
-            print(f'Epoch {epoch + 1}/{num_epochs}, Loss: {total_loss/len(train_loader):.4f}')
-    
-    return model
+        # Validate input
+        if not data or 'movies' not in data:
+            return jsonify({'error': 'Please provide a list of movies'}), 400
+            
+        user_movies = data['movies']
+        
+        if not isinstance(user_movies, list) or len(user_movies) != 5:
+            return jsonify({'error': 'Please provide exactly 5 movies'}), 400
+            
+        # Convert movie titles to IDs
+        movie_ids = []
+        for movie_title in user_movies:
+            if movie_title not in movie_title_to_id:
+                return jsonify({'error': f'Movie not found: {movie_title}'}), 400
+            movie_ids.append(movie_title_to_id[movie_title])
+        
+        # Prepare model input
+        user_features, movie_features, edge_index = prepare_model_input(movie_ids)
+        
+        # Get predictions for all movies
+        with torch.no_grad():
+            # Create edge indices for all possible movie recommendations
+            all_movie_indices = torch.arange(num_movies)
+            all_edge_index = torch.tensor([
+                [0] * num_movies,  # Source nodes (user)
+                all_movie_indices  # Target nodes (all movies)
+            ], dtype=torch.long)
+            
+            # Get predictions
+            predictions = model.predict(
+                user_features.unsqueeze(0),  # Add batch dimension
+                movie_features,
+                all_edge_index
+            )
+            
+            # Get top 15 recommendations
+            top_15_indices = predictions.squeeze().topk(15).indices.tolist()
+            recommended_movie_ids = [movie_mapping_reverse[idx] for idx in top_15_indices]
+            
+            # Get movie titles
+            recommended_movies = []
+            for movie_id in recommended_movie_ids:
+                movie_title = movies_df[movies_df['movieId'] == movie_id]['title'].iloc[0]
+                recommended_movies.append(movie_title)
+        
+        return jsonify({
+            'recommendations': recommended_movies
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
-def main():
-    # Load data
-    print("Loading MovieLens dataset...")
-    data, user_mapping, movie_mapping = load_movielens_data('100k')
-    
-    # Train model
-    print("\nTraining MPGNN model...")
-    model = train_model(data)
-    
-    # Save model
-    torch.save(model.state_dict(), 'models/mpgnn_model.pth')
-    print("\nModel saved to 'models/mpgnn_model.pth'")
+@app.route('/api/health', methods=['GET'])
+def health_check():
+    return jsonify({'status': 'healthy'})
 
-if __name__ == "__main__":
-    main()
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0', port=5000)
