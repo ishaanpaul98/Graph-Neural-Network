@@ -17,7 +17,11 @@ class MovieLensDownloader:
         self.dataset_size = dataset_size.lower()
         self.base_url = "https://files.grouplens.org/datasets/movielens"
         self.dataset_folder = Path("dataset")
-        #self.dataset_folder.mkdir(parents=True, exist_ok=True)
+        try:
+            self.dataset_folder.mkdir(parents=True, exist_ok=True)
+        except Exception as e:
+            print(f"Error creating dataset directory: {str(e)}")
+            raise
         
         # Dataset URLs and names
         self.dataset_info = {
@@ -53,32 +57,102 @@ class MovieLensDownloader:
         dataset_info = self.dataset_info[self.dataset_size]
         zip_path = self.dataset_folder / f"{dataset_info['name']}.zip"
         
-        # Download if file doesn't exist
-        if not zip_path.exists():
-            print(f"Downloading MovieLens {self.dataset_size} dataset...")
-            response = requests.get(dataset_info['url'], stream=True)
-            response.raise_for_status()
+        # For 10M dataset, the files are in ml-10M100K directory
+        if self.dataset_size == '10m':
+            extract_path = self.dataset_folder / 'ml-10M100K'
+        else:
+            extract_path = self.dataset_folder / dataset_info['name']
+        
+        try:
+            # Ensure dataset folder exists
+            self.dataset_folder.mkdir(parents=True, exist_ok=True)
             
-            with open(zip_path, 'wb') as f:
-                for chunk in response.iter_content(chunk_size=8192):
-                    f.write(chunk)
-            print("Download completed!")
-        
-        # Extract if not already extracted
-        extract_path = self.dataset_folder / dataset_info['name']
-        if not extract_path.exists():
-            print(f"Extracting {zip_path}...")
-            with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-                zip_ref.extractall(self.dataset_folder)
-            print("Extraction completed!")
-        
-        return extract_path
+            # Download if file doesn't exist
+            if not zip_path.exists():
+                print(f"Downloading MovieLens {self.dataset_size} dataset...")
+                print(f"URL: {dataset_info['url']}")
+                print(f"Destination: {zip_path}")
+                
+                response = requests.get(dataset_info['url'], stream=True)
+                response.raise_for_status()
+                
+                with open(zip_path, 'wb') as f:
+                    for chunk in response.iter_content(chunk_size=8192):
+                        f.write(chunk)
+                print("Download completed!")
+            
+            # Verify zip file
+            if not zip_path.exists():
+                raise RuntimeError(f"Downloaded zip file not found at {zip_path}")
+            
+            # Check if zip file is valid
+            try:
+                with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                    if not zip_ref.namelist():
+                        raise RuntimeError("Zip file is empty")
+                    print(f"Zip file contains {len(zip_ref.namelist())} files")
+            except zipfile.BadZipFile:
+                raise RuntimeError("Downloaded file is not a valid zip file")
+            
+            # Extract if not already extracted
+            if not extract_path.exists():
+                print(f"Extracting {zip_path}...")
+                with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                    # List files in zip
+                    print("Files in zip:")
+                    for file in zip_ref.namelist():
+                        print(f"- {file}")
+                    
+                    # Extract all files
+                    zip_ref.extractall(self.dataset_folder)
+                print("Extraction completed!")
+            
+            # List all files in the extraction directory
+            print(f"\nFiles found in {extract_path}:")
+            extracted_files = list(extract_path.iterdir())
+            if not extracted_files:
+                print("No files found in extraction directory")
+                raise RuntimeError("Extraction resulted in empty directory")
+            
+            for file in extracted_files:
+                print(f"- {file.name}")
+            
+            # Verify extraction by checking for required files based on dataset size
+            if self.dataset_size == '100k':
+                required_files = ['u.data', 'u.item']
+            elif self.dataset_size == '1m':
+                required_files = ['ratings.dat', 'movies.dat']
+            elif self.dataset_size == '10m':
+                required_files = ['ratings.dat', 'movies.dat']  # 10M uses .dat files
+            elif self.dataset_size in ['20m', '32m']:
+                required_files = ['ratings.csv', 'movies.csv']
+            
+            # Check if any of the required files exist
+            if not any((extract_path / file).exists() for file in required_files):
+                raise RuntimeError(f"Extraction failed. Required files not found in {extract_path}")
+            
+            print(f"Dataset successfully downloaded and extracted to: {extract_path}")
+            return extract_path
+            
+        except requests.exceptions.RequestException as e:
+            print(f"Error downloading dataset: {str(e)}")
+            raise
+        except zipfile.BadZipFile as e:
+            print(f"Error extracting zip file: {str(e)}")
+            raise
+        except Exception as e:
+            print(f"Unexpected error: {str(e)}")
+            raise
     
     def get_dataset_info(self):
         """
         Get information about the downloaded dataset
         """
-        dataset_path = self.dataset_folder / self.dataset_info[self.dataset_size]['name']
+        # For 10M dataset, use ml-10M100K directory
+        if self.dataset_size == '10m':
+            dataset_path = self.dataset_folder / 'ml-10M100K'
+        else:
+            dataset_path = self.dataset_folder / self.dataset_info[self.dataset_size]['name']
         
         if not dataset_path.exists():
             print("Dataset not found. Please download it first.")
@@ -107,32 +181,39 @@ class MovieLensDownloader:
                                             'Fantasy', 'Film-Noir', 'Horror', 'Musical', 'Mystery',
                                             'Romance', 'Sci-Fi', 'Thriller', 'War', 'Western'])
             
-            # For other datasets
+            # For 1M and 10M datasets
+            elif self.dataset_size in ['1m', '10m']:
+                # Read ratings
+                ratings_file = dataset_path / 'ratings.dat'
+                if not ratings_file.exists():
+                    raise FileNotFoundError(f"No ratings file found at {ratings_file}")
+                
+                ratings_df = pd.read_csv(ratings_file, sep='::', engine='python', 
+                                       names=['userId', 'movieId', 'rating', 'timestamp'])
+                
+                # Read movies
+                movies_file = dataset_path / 'movies.dat'
+                if not movies_file.exists():
+                    raise FileNotFoundError(f"No movies file found at {movies_file}")
+                
+                movies_df = pd.read_csv(movies_file, sep='::', engine='python', 
+                                      names=['movieId', 'title', 'genres'])
+            
+            # For 20M and 32M datasets
             else:
-                # Find ratings file (could be .dat or .csv)
-                ratings_files = list(dataset_path.glob('ratings.*'))
-                if not ratings_files:
-                    raise FileNotFoundError(f"No ratings file found in {dataset_path}")
-                ratings_file = ratings_files[0]
+                # Read ratings
+                ratings_file = dataset_path / 'ratings.csv'
+                if not ratings_file.exists():
+                    raise FileNotFoundError(f"No ratings file found at {ratings_file}")
                 
-                # Find movies file (could be .dat or .csv)
-                movies_files = list(dataset_path.glob('movies.*'))
-                if not movies_files:
-                    raise FileNotFoundError(f"No movies file found in {dataset_path}")
-                movies_file = movies_files[0]
+                ratings_df = pd.read_csv(ratings_file)
                 
-                # Read the files based on their extension
-                if ratings_file.suffix == '.dat':
-                    ratings_df = pd.read_csv(ratings_file, sep='::', engine='python', 
-                                           names=['userId', 'movieId', 'rating', 'timestamp'])
-                else:
-                    ratings_df = pd.read_csv(ratings_file)
-                    
-                if movies_file.suffix == '.dat':
-                    movies_df = pd.read_csv(movies_file, sep='::', engine='python', 
-                                          names=['movieId', 'title', 'genres'])
-                else:
-                    movies_df = pd.read_csv(movies_file)
+                # Read movies
+                movies_file = dataset_path / 'movies.csv'
+                if not movies_file.exists():
+                    raise FileNotFoundError(f"No movies file found at {movies_file}")
+                
+                movies_df = pd.read_csv(movies_file)
             
             print("\nDataset Information:")
             print(f"Total number of ratings: {len(ratings_df)}")
