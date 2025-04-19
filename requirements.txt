@@ -99,7 +99,7 @@ termcolor==2.5.0
 tf_keras==2.18.0
 threadpoolctl==3.5.0
 tokenizers==0.20.3
-torch==2.4.1
+torch==2.6.0
 torch-geometric==2.6.1
 torch_cluster==1.6.3
 torch_geometric_temporal==0.54.0
