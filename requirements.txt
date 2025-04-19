@@ -94,7 +94,7 @@ stack-data==0.6.3
 sympy==1.13.3
 tensorboard==2.18.0
 tensorboard-data-server==0.7.2
-tensorflow==2.19.0
+tensorflow
 termcolor==2.5.0
 tf_keras==2.18.0
 threadpoolctl==3.5.0
