@@ -6,3 +6,4 @@ liblapack-dev
 libatlas-base-dev
 gcc
 g++ 
+python-3.11.8
