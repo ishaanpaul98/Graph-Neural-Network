@@ -7,7 +7,7 @@ asttokens==2.4.1
 astunparse==1.6.3
 attrs==24.2.0
 blinker==1.9.0
-captum==0.7.0
+#captum==0.7.0  # depends on scipy
 certifi==2024.8.30
 charset-normalizer==3.3.2
 click==8.1.7
@@ -17,7 +17,7 @@ cycler==0.12.1
 Cython==3.0.11
 debugpy==1.8.6
 decorator==5.1.1
-#deepchem==2.5.0
+#deepchem==2.5.0  # depends on scipy
 executing==2.1.0
 filelock==3.16.1
 Flask==3.1.0
@@ -83,9 +83,9 @@ regex==2024.11.6
 requests==2.32.3
 rich==13.9.2
 safetensors==0.4.5
-scikit-learn==1.5.2
+#scikit-learn==1.5.2  # depends on scipy
 #scipy==1.12.0
-seaborn==0.13.2
+#seaborn==0.13.2  # depends on scipy
 sentence-transformers==3.2.1
 setuptools==75.6.0
 six==1.16.0
