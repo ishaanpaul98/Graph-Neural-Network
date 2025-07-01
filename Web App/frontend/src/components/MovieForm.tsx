@@ -11,6 +11,7 @@ import {
   Chip
 } from '@mui/material';
 import axios from 'axios';
+import { API_URLS } from '../config/api';
 
 interface MovieFormProps {
   onRecommendations: (recommendations: string[]) => void;
@@ -38,7 +39,7 @@ const MovieForm: React.FC<MovieFormProps> = ({ onRecommendations }) => {
     const fetchMovies = async () => {
       try {
         console.log('Fetching movies from backend...');
-        const response = await axios.get('http://44.249.240.187:8000/api/movies', {
+        const response = await axios.get(API_URLS.MOVIES, {
           headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
@@ -102,7 +103,7 @@ const MovieForm: React.FC<MovieFormProps> = ({ onRecommendations }) => {
     try {
       setLoading(true);
       setError(null);
-      const response = await axios.post('http://44.249.240.187:8000/api/recommend', {
+      const response = await axios.post(API_URLS.RECOMMEND, {
         movies: selectedMovies
       });
       onRecommendations(response.data.recommendations);
