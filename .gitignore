@@ -22,3 +22,5 @@ Web App/Back End/Dataset/ml-10m.zip
 Web App/Back End/Dataset/ml-10M100K
 Web App/Back End/Dataset/ml-100k.zip
 .venv
+*.pem
+*.pem.backup

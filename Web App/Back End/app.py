@@ -15,7 +15,8 @@ CORS(app, resources={
         "origins": [
             "http://localhost:5173",
             "http://localhost:5174",
-            "http://localhost:3000"
+            "http://localhost:3000",
+            "http://localhost:8000"
         ],
         "methods": ["GET", "POST", "OPTIONS"],
         "allow_headers": ["Content-Type", "Accept"],
@@ -189,6 +190,11 @@ def get_recommendations():
 def health_check():
     return jsonify({'status': 'healthy'})
 
+@app.route('/', methods=['GET'])
+def home():
+    return jsonify({'status': 'healthy', 'message': 'Welcome to the Movie Recommendation API'})
+
+
 @app.route('/api/movies', methods=['GET'])
 def get_available_movies():
     try:
@@ -206,4 +212,4 @@ def get_available_movies():
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, host='0.0.0.0', port=8000)
