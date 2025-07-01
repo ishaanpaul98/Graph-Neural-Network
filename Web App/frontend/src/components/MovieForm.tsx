@@ -38,7 +38,7 @@ const MovieForm: React.FC<MovieFormProps> = ({ onRecommendations }) => {
     const fetchMovies = async () => {
       try {
         console.log('Fetching movies from backend...');
-        const response = await axios.get('http://localhost:8000/api/movies', {
+        const response = await axios.get('http://44.249.240.187:8000/api/movies', {
           headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
@@ -98,11 +98,11 @@ const MovieForm: React.FC<MovieFormProps> = ({ onRecommendations }) => {
     fetchMovies();
   }, []);
 
-  const onSubmit = async (data: FormData) => {
+  const onSubmit = async () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await axios.post('http://localhost:8000/api/recommend', {
+      const response = await axios.post('http://44.249.240.187:8000/api/recommend', {
         movies: selectedMovies
       });
       onRecommendations(response.data.recommendations);
