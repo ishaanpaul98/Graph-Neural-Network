@@ -24,3 +24,5 @@ Web App/Back End/Dataset/ml-100k.zip
 .venv
 *.pem
 *.pem.backup
+*.apib
+*.env

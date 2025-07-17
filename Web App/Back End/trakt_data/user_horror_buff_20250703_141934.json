@@ -1,0 +1,786 @@
+{
+  "username": "horror_buff",
+  "collected_at": "2025-07-03T14:19:34.339762",
+  "watched_movies": [
+    {
+      "last_watched_at": "2025-03-09T14:19:34.339762",
+      "movie": {
+        "title": "The Horror",
+        "year": 2017,
+        "ids": {
+          "trakt": 335511,
+          "slug": "the-horror-2017",
+          "imdb": "tt7545754",
+          "tmdb": 488464
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "last_watched_at": "2024-09-10T14:19:34.339762",
+      "movie": {
+        "title": "The Horror",
+        "year": 2015,
+        "ids": {
+          "trakt": 218827,
+          "slug": "the-horror-2015",
+          "imdb": "tt4599860",
+          "tmdb": 338274
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "last_watched_at": "2024-08-02T14:19:34.339762",
+      "movie": {
+        "title": "Horror",
+        "year": 2023,
+        "ids": {
+          "trakt": 960022,
+          "slug": "horror-2023",
+          "imdb": null,
+          "tmdb": 1190110
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "last_watched_at": "2024-09-29T14:19:34.339762",
+      "movie": {
+        "title": "Horror",
+        "year": 1969,
+        "ids": {
+          "trakt": 335948,
+          "slug": "horror-1969",
+          "imdb": "tt0064442",
+          "tmdb": 488891
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "last_watched_at": "2024-11-10T14:19:34.339762",
+      "movie": {
+        "title": "The Horror",
+        "year": 1932,
+        "ids": {
+          "trakt": 574998,
+          "slug": "the-horror-1932",
+          "imdb": "tt0194949",
+          "tmdb": 733068
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "last_watched_at": "2024-11-03T14:19:34.339762",
+      "movie": {
+        "title": "Horror",
+        "year": 2001,
+        "ids": {
+          "trakt": 756695,
+          "slug": "horror-2001",
+          "imdb": "tt14509876",
+          "tmdb": 942367
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "last_watched_at": "2024-08-24T14:19:34.339762",
+      "movie": {
+        "title": "Horror",
+        "year": 2015,
+        "ids": {
+          "trakt": 1133855,
+          "slug": "horror-2015-01-01",
+          "imdb": null,
+          "tmdb": 1387299
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "last_watched_at": "2024-08-08T14:19:34.339762",
+      "movie": {
+        "title": "Horror",
+        "year": 1963,
+        "ids": {
+          "trakt": 1034001,
+          "slug": "horror-1963",
+          "imdb": "tt0419243",
+          "tmdb": 1273131
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "last_watched_at": "2025-05-03T14:19:34.339762",
+      "movie": {
+        "title": "Horror",
+        "year": null,
+        "ids": {
+          "trakt": 1080573,
+          "slug": "horror-1080573",
+          "imdb": null,
+          "tmdb": 1321475
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "last_watched_at": "2025-06-18T14:19:34.339762",
+      "movie": {
+        "title": "horror",
+        "year": null,
+        "ids": {
+          "trakt": 988615,
+          "slug": "horror-988615",
+          "imdb": null,
+          "tmdb": 1223885
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "last_watched_at": "2024-10-14T14:19:34.339762",
+      "movie": {
+        "title": "HORROR",
+        "year": 2026,
+        "ids": {
+          "trakt": 1193292,
+          "slug": "horror-2026",
+          "imdb": null,
+          "tmdb": 1457147
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "last_watched_at": "2024-10-25T14:19:34.339762",
+      "movie": {
+        "title": "HORROR",
+        "year": 2024,
+        "ids": {
+          "trakt": 1188981,
+          "slug": "horror-2024",
+          "imdb": null,
+          "tmdb": 1452020
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "last_watched_at": "2024-10-09T14:19:34.339762",
+      "movie": {
+        "title": "The Rocky Horror Picture Show",
+        "year": 1975,
+        "ids": {
+          "trakt": 23323,
+          "slug": "the-rocky-horror-picture-show-1975",
+          "imdb": "tt0073629",
+          "tmdb": 36685
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "last_watched_at": "2024-11-20T14:19:34.339762",
+      "movie": {
+        "title": "The Amityville Horror",
+        "year": 2005,
+        "ids": {
+          "trakt": 5286,
+          "slug": "the-amityville-horror-2005",
+          "imdb": "tt0384806",
+          "tmdb": 10065
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "last_watched_at": "2025-02-24T14:19:34.339762",
+      "movie": {
+        "title": "Little Shop of Horrors",
+        "year": 1986,
+        "ids": {
+          "trakt": 5938,
+          "slug": "little-shop-of-horrors-1986",
+          "imdb": "tt0091419",
+          "tmdb": 10776
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "last_watched_at": "2025-01-09T14:19:34.339762",
+      "movie": {
+        "title": "The Amityville Horror",
+        "year": 1979,
+        "ids": {
+          "trakt": 6537,
+          "slug": "the-amityville-horror-1979",
+          "imdb": "tt0078767",
+          "tmdb": 11449
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "last_watched_at": "2024-08-05T14:19:34.339762",
+      "movie": {
+        "title": "A Classic Horror Story",
+        "year": 2021,
+        "ids": {
+          "trakt": 606379,
+          "slug": "a-classic-horror-story-2021",
+          "imdb": "tt12877640",
+          "tmdb": 768334
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "last_watched_at": "2025-04-04T14:19:34.339762",
+      "movie": {
+        "title": "Horrorathon, Volume Two",
+        "year": 2020,
+        "ids": {
+          "trakt": 858788,
+          "slug": "horrorathon-volume-two-2020",
+          "imdb": "tt13667500",
+          "tmdb": 1067568
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "last_watched_at": "2025-01-29T14:19:34.339762",
+      "movie": {
+        "title": "A Christmas Horror Story",
+        "year": 2015,
+        "ids": {
+          "trakt": 191541,
+          "slug": "a-christmas-horror-story-2015",
+          "imdb": "tt3688406",
+          "tmdb": 311539
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "last_watched_at": "2024-10-18T14:19:34.339762",
+      "movie": {
+        "title": "HorrorGirl",
+        "year": 1995,
+        "ids": {
+          "trakt": 254867,
+          "slug": "horrorgirl-1995",
+          "imdb": "tt4652864",
+          "tmdb": 306746
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "last_watched_at": "2025-06-17T14:19:34.339762",
+      "movie": {
+        "title": "HorrorHouse",
+        "year": 1998,
+        "ids": {
+          "trakt": 287727,
+          "slug": "horrorhouse-1998",
+          "imdb": null,
+          "tmdb": 442259
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "last_watched_at": "2025-04-15T14:19:34.339762",
+      "movie": {
+        "title": "Horror Express",
+        "year": 1972,
+        "ids": {
+          "trakt": 20941,
+          "slug": "horror-express-1972",
+          "imdb": "tt0068713",
+          "tmdb": 32613
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "last_watched_at": "2025-01-30T14:19:34.339762",
+      "movie": {
+        "title": "The Little Shop of Horrors",
+        "year": 1960,
+        "ids": {
+          "trakt": 14717,
+          "slug": "the-little-shop-of-horrors-1960",
+          "imdb": "tt0054033",
+          "tmdb": 24452
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "last_watched_at": "2025-02-18T14:19:34.339762",
+      "movie": {
+        "title": "Horror Noire: A History of Black Horror",
+        "year": 2019,
+        "ids": {
+          "trakt": 425133,
+          "slug": "horror-noire-a-history-of-black-horror-2019",
+          "imdb": "tt9567548",
+          "tmdb": 574109
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "last_watched_at": "2025-02-11T14:19:34.339762",
+      "movie": {
+        "title": "Dr. Horror's Erotic House of Idiots",
+        "year": 2004,
+        "ids": {
+          "trakt": 17622,
+          "slug": "dr-horror-s-erotic-house-of-idiots-2004",
+          "imdb": "tt0295930",
+          "tmdb": 28310
+        },
+        "rating": null,
+        "votes": null
+      }
+    }
+  ],
+  "watched_shows": [],
+  "movie_ratings": [
+    {
+      "rating": 7,
+      "rated_at": "2025-02-17T14:19:34.339762",
+      "movie": {
+        "title": "The Horror",
+        "year": 2017,
+        "ids": {
+          "trakt": 335511,
+          "slug": "the-horror-2017",
+          "imdb": "tt7545754",
+          "tmdb": 488464
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "rating": 7,
+      "rated_at": "2025-06-19T14:19:34.339762",
+      "movie": {
+        "title": "The Horror",
+        "year": 2015,
+        "ids": {
+          "trakt": 218827,
+          "slug": "the-horror-2015",
+          "imdb": "tt4599860",
+          "tmdb": 338274
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "rating": 9,
+      "rated_at": "2025-06-09T14:19:34.339762",
+      "movie": {
+        "title": "Horror",
+        "year": 2023,
+        "ids": {
+          "trakt": 960022,
+          "slug": "horror-2023",
+          "imdb": null,
+          "tmdb": 1190110
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "rating": 6,
+      "rated_at": "2024-07-26T14:19:34.339762",
+      "movie": {
+        "title": "Horror",
+        "year": 1969,
+        "ids": {
+          "trakt": 335948,
+          "slug": "horror-1969",
+          "imdb": "tt0064442",
+          "tmdb": 488891
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "rating": 6,
+      "rated_at": "2024-12-24T14:19:34.339762",
+      "movie": {
+        "title": "The Horror",
+        "year": 1932,
+        "ids": {
+          "trakt": 574998,
+          "slug": "the-horror-1932",
+          "imdb": "tt0194949",
+          "tmdb": 733068
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "rating": 9,
+      "rated_at": "2024-09-22T14:19:34.339762",
+      "movie": {
+        "title": "Horror",
+        "year": 2001,
+        "ids": {
+          "trakt": 756695,
+          "slug": "horror-2001",
+          "imdb": "tt14509876",
+          "tmdb": 942367
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "rating": 7,
+      "rated_at": "2024-09-24T14:19:34.339762",
+      "movie": {
+        "title": "Horror",
+        "year": 2015,
+        "ids": {
+          "trakt": 1133855,
+          "slug": "horror-2015-01-01",
+          "imdb": null,
+          "tmdb": 1387299
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "rating": 9,
+      "rated_at": "2024-10-30T14:19:34.339762",
+      "movie": {
+        "title": "Horror",
+        "year": 1963,
+        "ids": {
+          "trakt": 1034001,
+          "slug": "horror-1963",
+          "imdb": "tt0419243",
+          "tmdb": 1273131
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "rating": 8,
+      "rated_at": "2024-09-18T14:19:34.339762",
+      "movie": {
+        "title": "Horror",
+        "year": null,
+        "ids": {
+          "trakt": 1080573,
+          "slug": "horror-1080573",
+          "imdb": null,
+          "tmdb": 1321475
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "rating": 7,
+      "rated_at": "2024-09-17T14:19:34.339762",
+      "movie": {
+        "title": "horror",
+        "year": null,
+        "ids": {
+          "trakt": 988615,
+          "slug": "horror-988615",
+          "imdb": null,
+          "tmdb": 1223885
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "rating": 6,
+      "rated_at": "2024-10-10T14:19:34.339762",
+      "movie": {
+        "title": "HORROR",
+        "year": 2026,
+        "ids": {
+          "trakt": 1193292,
+          "slug": "horror-2026",
+          "imdb": null,
+          "tmdb": 1457147
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "rating": 8,
+      "rated_at": "2024-07-19T14:19:34.339762",
+      "movie": {
+        "title": "HORROR",
+        "year": 2024,
+        "ids": {
+          "trakt": 1188981,
+          "slug": "horror-2024",
+          "imdb": null,
+          "tmdb": 1452020
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "rating": 8,
+      "rated_at": "2024-09-09T14:19:34.339762",
+      "movie": {
+        "title": "The Rocky Horror Picture Show",
+        "year": 1975,
+        "ids": {
+          "trakt": 23323,
+          "slug": "the-rocky-horror-picture-show-1975",
+          "imdb": "tt0073629",
+          "tmdb": 36685
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "rating": 7,
+      "rated_at": "2025-06-01T14:19:34.339762",
+      "movie": {
+        "title": "The Amityville Horror",
+        "year": 2005,
+        "ids": {
+          "trakt": 5286,
+          "slug": "the-amityville-horror-2005",
+          "imdb": "tt0384806",
+          "tmdb": 10065
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "rating": 7,
+      "rated_at": "2025-01-13T14:19:34.339762",
+      "movie": {
+        "title": "Little Shop of Horrors",
+        "year": 1986,
+        "ids": {
+          "trakt": 5938,
+          "slug": "little-shop-of-horrors-1986",
+          "imdb": "tt0091419",
+          "tmdb": 10776
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "rating": 8,
+      "rated_at": "2024-10-20T14:19:34.339762",
+      "movie": {
+        "title": "The Amityville Horror",
+        "year": 1979,
+        "ids": {
+          "trakt": 6537,
+          "slug": "the-amityville-horror-1979",
+          "imdb": "tt0078767",
+          "tmdb": 11449
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "rating": 7,
+      "rated_at": "2024-09-07T14:19:34.339762",
+      "movie": {
+        "title": "A Classic Horror Story",
+        "year": 2021,
+        "ids": {
+          "trakt": 606379,
+          "slug": "a-classic-horror-story-2021",
+          "imdb": "tt12877640",
+          "tmdb": 768334
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "rating": 6,
+      "rated_at": "2024-12-01T14:19:34.339762",
+      "movie": {
+        "title": "Horrorathon, Volume Two",
+        "year": 2020,
+        "ids": {
+          "trakt": 858788,
+          "slug": "horrorathon-volume-two-2020",
+          "imdb": "tt13667500",
+          "tmdb": 1067568
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "rating": 7,
+      "rated_at": "2025-02-21T14:19:34.339762",
+      "movie": {
+        "title": "A Christmas Horror Story",
+        "year": 2015,
+        "ids": {
+          "trakt": 191541,
+          "slug": "a-christmas-horror-story-2015",
+          "imdb": "tt3688406",
+          "tmdb": 311539
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "rating": 6,
+      "rated_at": "2024-09-16T14:19:34.339762",
+      "movie": {
+        "title": "HorrorGirl",
+        "year": 1995,
+        "ids": {
+          "trakt": 254867,
+          "slug": "horrorgirl-1995",
+          "imdb": "tt4652864",
+          "tmdb": 306746
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "rating": 8,
+      "rated_at": "2024-08-13T14:19:34.339762",
+      "movie": {
+        "title": "HorrorHouse",
+        "year": 1998,
+        "ids": {
+          "trakt": 287727,
+          "slug": "horrorhouse-1998",
+          "imdb": null,
+          "tmdb": 442259
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "rating": 6,
+      "rated_at": "2024-07-19T14:19:34.339762",
+      "movie": {
+        "title": "Horror Express",
+        "year": 1972,
+        "ids": {
+          "trakt": 20941,
+          "slug": "horror-express-1972",
+          "imdb": "tt0068713",
+          "tmdb": 32613
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "rating": 8,
+      "rated_at": "2025-06-12T14:19:34.339762",
+      "movie": {
+        "title": "The Little Shop of Horrors",
+        "year": 1960,
+        "ids": {
+          "trakt": 14717,
+          "slug": "the-little-shop-of-horrors-1960",
+          "imdb": "tt0054033",
+          "tmdb": 24452
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "rating": 7,
+      "rated_at": "2024-07-26T14:19:34.339762",
+      "movie": {
+        "title": "Horror Noire: A History of Black Horror",
+        "year": 2019,
+        "ids": {
+          "trakt": 425133,
+          "slug": "horror-noire-a-history-of-black-horror-2019",
+          "imdb": "tt9567548",
+          "tmdb": 574109
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "rating": 9,
+      "rated_at": "2025-05-23T14:19:34.339762",
+      "movie": {
+        "title": "Dr. Horror's Erotic House of Idiots",
+        "year": 2004,
+        "ids": {
+          "trakt": 17622,
+          "slug": "dr-horror-s-erotic-house-of-idiots-2004",
+          "imdb": "tt0295930",
+          "tmdb": 28310
+        },
+        "rating": null,
+        "votes": null
+      }
+    }
+  ],
+  "show_ratings": [],
+  "episode_ratings": []
+}

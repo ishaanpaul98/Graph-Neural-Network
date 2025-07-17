@@ -1,14 +1,23 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, redirect, session, url_for
 from flask_cors import CORS
 import torch
 import json
 import os
 import numpy as np
+import secrets
 from typing import List, Dict
+from dotenv import load_dotenv
 from NN.mpgnn import MPGNN
 from Dataset.download_movielens import MovieLensDownloader
+from trakt_api import trakt_api
+from session_manager import session_manager
+
+# Load environment variables from .env file
+load_dotenv()
 
 app = Flask(__name__)
+app.secret_key = os.getenv('FLASK_SECRET_KEY', secrets.token_hex(16))
+
 # Configure CORS to allow requests from the frontend
 CORS(app, resources={
     r"/*": {
@@ -16,10 +25,13 @@ CORS(app, resources={
             "http://localhost:5173",
             "http://localhost:5174",
             "http://localhost:3000",
-            "http://localhost:8000"
+            "http://localhost:8000",
+            "https://*.amplifyapp.com",  # AWS Amplify domains
+            "https://*.amplifyapp.net",  # Alternative Amplify domains
+            "http://44.249.240.187:8000"  # Your EC2 IP (for testing)
         ],
         "methods": ["GET", "POST", "OPTIONS"],
-        "allow_headers": ["Content-Type", "Accept"],
+        "allow_headers": ["Content-Type", "Accept", "X-Session-ID"],
         "supports_credentials": True
     }
 })
@@ -42,7 +54,7 @@ def after_request(response):
     return response
 
 # Initialize the model and load mappings
-MODEL_PATH = os.path.join('models', 'mpgnn_model.pth')
+MODEL_PATH = os.path.join('models', 'trakt_gnn_model.pth')
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # Load model and mappings
@@ -64,11 +76,11 @@ if os.path.exists(MODEL_PATH):
         print(f"Number of users: {num_users}")
         print(f"Number of movies: {num_movies}")
         
-        # Initialize model with correct dimensions
+        # Initialize model with correct dimensions for Trakt data
         model = MPGNN(
-            num_user_features=num_users,
-            num_movie_features=num_movies,
-            hidden_channels=8,
+            num_user_features=16,  # Fixed feature dimension for users
+            num_movie_features=16,  # Fixed feature dimension for movies
+            hidden_channels=saved_data.get('hidden_channels', 64),
             num_classes=1
         )
         
@@ -96,15 +108,11 @@ def prepare_model_input(movie_ids: List[int]) -> tuple:
     # Create a dummy user (we'll use index 0)
     user_idx = 0
     
-    # Create user features (one-hot encoding)
-    user_features = torch.zeros(num_users)
-    user_features[user_idx] = 1
+        # Create user features (16-dimensional random features)
+    user_features = torch.randn(1, 16)  # Single user with 16 features
     
-    # Create movie features (one-hot encoding)
-    movie_features = torch.zeros((num_movies, num_movies))
-    for movie_id in movie_mapping:
-        movie_idx = movie_mapping[movie_id]
-        movie_features[movie_idx, movie_idx] = 1
+    # Create movie features (16-dimensional random features for all movies)
+    movie_features = torch.randn(num_movies, 16)
     
     # Create edge indices for input movies
     edge_index = torch.tensor([
@@ -209,6 +217,230 @@ def get_available_movies():
         return jsonify({'movies': movies})
     except Exception as e:
         print(f"Error in get_available_movies: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+# Trakt API Integration Endpoints
+
+@app.route('/auth/trakt', methods=['GET'])
+def trakt_auth():
+    """Redirect user to Trakt OAuth authorization"""
+    try:
+        # Generate a unique state parameter for security
+        state = secrets.token_urlsafe(32)
+        session['oauth_state'] = state
+        
+        # Get authorization URL
+        auth_url = trakt_api.get_authorization_url(state)
+        return jsonify({'auth_url': auth_url})
+    except Exception as e:
+        print(f"Error in trakt_auth: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/auth/callback', methods=['GET'])
+def trakt_callback():
+    """Handle OAuth callback from Trakt"""
+    try:
+        code = request.args.get('code')
+        state = request.args.get('state')
+        
+        # Verify state parameter
+        if state != session.get('oauth_state'):
+            return jsonify({'error': 'Invalid state parameter'}), 400
+        
+        if not code:
+            return jsonify({'error': 'No authorization code received'}), 400
+        
+        # Exchange code for tokens
+        token_data = trakt_api.exchange_code_for_token(code)
+        
+        # Create session
+        session_id = secrets.token_urlsafe(32)
+        success = session_manager.create_session(
+            session_id=session_id,
+            access_token=token_data['access_token'],
+            refresh_token=token_data['refresh_token'],
+            expires_in=token_data['expires_in']
+        )
+        
+        if not success:
+            return jsonify({'error': 'Failed to create session'}), 500
+        
+        # Store session ID in Flask session
+        session['trakt_session_id'] = session_id
+        
+        # Redirect to frontend with success and session ID
+        return redirect(f'http://localhost:8000/auth-success?session_id={session_id}')
+        
+    except Exception as e:
+        print(f"Error in trakt_callback: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/trakt/search', methods=['GET'])
+def trakt_search():
+    """Search for movies and TV shows on Trakt"""
+    try:
+        query = request.args.get('query', '')
+        limit = int(request.args.get('limit', 10))
+        
+        if not query:
+            return jsonify({'error': 'Query parameter is required'}), 400
+        
+        # Search for movies and shows
+        results = trakt_api.search_movies_and_shows(query, limit)
+        
+        return jsonify({'results': results})
+        
+    except Exception as e:
+        print(f"Error in trakt_search: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/trakt/recommend', methods=['POST'])
+def trakt_recommend():
+    """Get recommendations using Trakt data and GNN model"""
+    try:
+        data = request.get_json()
+        
+        if not data or 'movies' not in data:
+            return jsonify({'error': 'Please provide a list of movies'}), 400
+        
+        user_movies = data['movies']
+        
+        if not isinstance(user_movies, list) or len(user_movies) != 5:
+            return jsonify({'error': 'Please provide exactly 5 movies'}), 400
+        
+        # Get session ID from request
+        session_id = request.headers.get('X-Session-ID')
+        if not session_id:
+            return jsonify({'error': 'Session ID required'}), 401
+        
+        # Get access token
+        access_token = session_manager.get_access_token(session_id)
+        if not access_token:
+            return jsonify({'error': 'Invalid or expired session'}), 401
+        
+        # First, try to get Trakt recommendations
+        try:
+            trakt_recommendations = trakt_api.get_movie_recommendations(access_token, 10)
+            trakt_titles = [movie['title'] for movie in trakt_recommendations]
+        except Exception as e:
+            print(f"Error getting Trakt recommendations: {e}")
+            trakt_titles = []
+        
+        # Then get GNN recommendations
+        try:
+            # Convert movie titles to IDs for GNN model
+            movie_ids = []
+            for movie_title in user_movies:
+                if movie_title not in movie_title_to_id:
+                    # Try to find similar movie in our dataset
+                    similar_movie = None
+                    for title, movie_id in movie_title_to_id.items():
+                        if movie_title.lower() in title.lower() or title.lower() in movie_title.lower():
+                            similar_movie = movie_id
+                            break
+                    
+                    if similar_movie:
+                        movie_ids.append(similar_movie)
+                    else:
+                        # Use a default movie if not found
+                        movie_ids.append(list(movie_title_to_id.values())[0])
+                else:
+                    movie_ids.append(movie_title_to_id[movie_title])
+            
+            # Get GNN predictions
+            user_features, movie_features, edge_index = prepare_model_input(movie_ids)
+            
+            with torch.no_grad():
+                all_movie_indices = torch.arange(num_movies)
+                all_edge_index = torch.tensor([
+                    [0] * num_movies,
+                    all_movie_indices
+                ], dtype=torch.long)
+                
+                predictions = model.predict(
+                    user_features.unsqueeze(0),
+                    movie_features,
+                    all_edge_index
+                )
+                
+                top_10_indices = predictions.squeeze().topk(10).indices.tolist()
+                gnn_recommendations = [movie_id_to_title[movie_mapping_reverse[idx]] for idx in top_10_indices]
+                
+        except Exception as e:
+            print(f"Error getting GNN recommendations: {e}")
+            gnn_recommendations = []
+        
+        # Combine recommendations (Trakt first, then GNN)
+        combined_recommendations = []
+        
+        # Add Trakt recommendations
+        for title in trakt_titles:
+            if title not in combined_recommendations:
+                combined_recommendations.append(title)
+        
+        # Add GNN recommendations
+        for title in gnn_recommendations:
+            if title not in combined_recommendations and len(combined_recommendations) < 15:
+                combined_recommendations.append(title)
+        
+        return jsonify({
+            'recommendations': combined_recommendations,
+            'trakt_recommendations': trakt_titles,
+            'gnn_recommendations': gnn_recommendations
+        })
+        
+    except Exception as e:
+        print(f"Error in trakt_recommend: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/trakt/trending', methods=['GET'])
+def trakt_trending():
+    """Get trending movies from Trakt"""
+    try:
+        limit = int(request.args.get('limit', 10))
+        trending = trakt_api.get_trending_movies(limit)
+        return jsonify({'trending': trending})
+    except Exception as e:
+        print(f"Error in trakt_trending: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/trakt/popular', methods=['GET'])
+def trakt_popular():
+    """Get popular movies from Trakt"""
+    try:
+        limit = int(request.args.get('limit', 10))
+        popular = trakt_api.get_popular_movies(limit)
+        return jsonify({'popular': popular})
+    except Exception as e:
+        print(f"Error in trakt_popular: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/trakt/collect-data', methods=['POST'])
+def collect_trakt_data():
+    """Collect Trakt data for training"""
+    try:
+        from trakt_data_collector import data_collector
+        
+        data = request.get_json()
+        access_tokens = data.get('access_tokens', [])
+        usernames = data.get('usernames', [])
+        
+        if not access_tokens:
+            return jsonify({'error': 'Access tokens required'}), 400
+        
+        # Start data collection
+        output_dir = data_collector.collect_all_data_for_training(access_tokens, usernames)
+        
+        if output_dir:
+            return jsonify({
+                'message': 'Data collection completed successfully',
+                'output_directory': output_dir
+            })
+        else:
+            return jsonify({'error': 'Data collection failed'}), 500
+            
+    except Exception as e:
+        print(f"Error in collect_trakt_data: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':

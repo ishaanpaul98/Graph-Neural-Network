@@ -1,0 +1,724 @@
+{
+  "username": "comedy_lover",
+  "collected_at": "2025-07-03T14:19:34.332761",
+  "watched_movies": [
+    {
+      "last_watched_at": "2025-05-31T14:19:34.332761",
+      "movie": {
+        "title": "The Comedy",
+        "year": 1984,
+        "ids": {
+          "trakt": 192633,
+          "slug": "the-comedy-1984",
+          "imdb": "tt0087097",
+          "tmdb": 313047
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "last_watched_at": "2025-04-27T14:19:34.332761",
+      "movie": {
+        "title": "Comedy",
+        "year": 1994,
+        "ids": {
+          "trakt": 646422,
+          "slug": "comedy-1994",
+          "imdb": null,
+          "tmdb": 812682
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "last_watched_at": "2025-04-25T14:19:34.332761",
+      "movie": {
+        "title": "Comedy",
+        "year": null,
+        "ids": {
+          "trakt": 1111036,
+          "slug": "comedy-1111036",
+          "imdb": null,
+          "tmdb": 1360929
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "last_watched_at": "2024-12-10T14:19:34.332761",
+      "movie": {
+        "title": "The Comedians of Comedy",
+        "year": 2005,
+        "ids": {
+          "trakt": 10148,
+          "slug": "the-comedians-of-comedy-2005",
+          "imdb": "tt0451021",
+          "tmdb": 16452
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "last_watched_at": "2024-10-06T14:19:34.332761",
+      "movie": {
+        "title": "The King of Comedy",
+        "year": 1982,
+        "ids": {
+          "trakt": 220,
+          "slug": "the-king-of-comedy-1982",
+          "imdb": "tt0085794",
+          "tmdb": 262
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "last_watched_at": "2024-12-11T14:19:34.332761",
+      "movie": {
+        "title": "Comedy's Dirtiest Dozen",
+        "year": 1988,
+        "ids": {
+          "trakt": 51856,
+          "slug": "comedy-s-dirtiest-dozen-1988",
+          "imdb": "tt0188516",
+          "tmdb": 70770
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "last_watched_at": "2025-03-07T14:19:34.332761",
+      "movie": {
+        "title": "The Comedians of Comedy: Live at the El Rey",
+        "year": 2006,
+        "ids": {
+          "trakt": 34841,
+          "slug": "the-comedians-of-comedy-live-at-the-el-rey-2006",
+          "imdb": "tt0880445",
+          "tmdb": 49925
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "last_watched_at": "2025-05-24T14:19:34.332761",
+      "movie": {
+        "title": "Why We Laugh: Black Comedians on Black Comedy",
+        "year": 2009,
+        "ids": {
+          "trakt": 23637,
+          "slug": "why-we-laugh-black-comedians-on-black-comedy-2009",
+          "imdb": "tt1124061",
+          "tmdb": 37040
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "last_watched_at": "2024-12-21T14:19:34.332761",
+      "movie": {
+        "title": "Louis C.K.: Live at The Comedy Store",
+        "year": 2015,
+        "ids": {
+          "trakt": 202273,
+          "slug": "louis-c-k-live-at-the-comedy-store-2015",
+          "imdb": "tt4368814",
+          "tmdb": 321594
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "last_watched_at": "2025-03-15T14:19:34.332761",
+      "movie": {
+        "title": "Comedy Central Roast of Justin Bieber",
+        "year": 2015,
+        "ids": {
+          "trakt": 802849,
+          "slug": "comedy-central-roast-of-justin-bieber-2015-03-30",
+          "imdb": "tt4504452",
+          "tmdb": 333103
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "last_watched_at": "2024-12-24T14:19:34.332761",
+      "movie": {
+        "title": "A Midsummer Night's Sex Comedy",
+        "year": 1982,
+        "ids": {
+          "trakt": 4111,
+          "slug": "a-midsummer-night-s-sex-comedy-1982",
+          "imdb": "tt0084329",
+          "tmdb": 8288
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "last_watched_at": "2025-03-20T14:19:34.332761",
+      "movie": {
+        "title": "The Original Kings of Comedy",
+        "year": 2000,
+        "ids": {
+          "trakt": 14226,
+          "slug": "the-original-kings-of-comedy-2000",
+          "imdb": "tt0236388",
+          "tmdb": 23618
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "last_watched_at": "2025-01-06T14:19:34.332761",
+      "movie": {
+        "title": "King of Comedy",
+        "year": 1999,
+        "ids": {
+          "trakt": 37529,
+          "slug": "king-of-comedy-1999",
+          "imdb": "tt0188766",
+          "tmdb": 53168
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "last_watched_at": "2024-11-14T14:19:34.332761",
+      "movie": {
+        "title": "Comedy Central Roast of Bruce Willis",
+        "year": 2018,
+        "ids": {
+          "trakt": 387979,
+          "slug": "comedy-central-roast-of-bruce-willis-2018",
+          "imdb": "tt8301054",
+          "tmdb": 536056
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "last_watched_at": "2024-08-08T14:19:34.332761",
+      "movie": {
+        "title": "Hannibal Buress: Comedy Camisado",
+        "year": 2016,
+        "ids": {
+          "trakt": 225465,
+          "slug": "hannibal-buress-comedy-camisado-2016",
+          "imdb": "tt5352432",
+          "tmdb": 378137
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "last_watched_at": "2025-06-25T14:19:34.332761",
+      "movie": {
+        "title": "Comedy Central Roast of James Franco",
+        "year": 2013,
+        "ids": {
+          "trakt": 193860,
+          "slug": "comedy-central-roast-of-james-franco-2013",
+          "imdb": "tt3098812",
+          "tmdb": 300302
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "last_watched_at": "2025-01-20T14:19:34.332761",
+      "movie": {
+        "title": "Jim Gaffigan: Comedy Monster",
+        "year": 2021,
+        "ids": {
+          "trakt": 723980,
+          "slug": "jim-gaffigan-comedy-monster-2021",
+          "imdb": "tt15907298",
+          "tmdb": 903303
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "last_watched_at": "2025-03-31T14:19:34.332761",
+      "movie": {
+        "title": "Comedy Central Roast of Donald Trump",
+        "year": 2011,
+        "ids": {
+          "trakt": 210162,
+          "slug": "comedy-central-roast-of-donald-trump-2011",
+          "imdb": "tt1865333",
+          "tmdb": 329243
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "last_watched_at": "2024-07-31T14:19:34.332761",
+      "movie": {
+        "title": "Def Comedy Jam 25",
+        "year": 2017,
+        "ids": {
+          "trakt": 325202,
+          "slug": "def-comedy-jam-25-2017",
+          "imdb": "tt7427130",
+          "tmdb": 478054
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "last_watched_at": "2025-05-06T14:19:34.332761",
+      "movie": {
+        "title": "The Comedy of Terrors",
+        "year": 1964,
+        "ids": {
+          "trakt": 18562,
+          "slug": "the-comedy-of-terrors-1964",
+          "imdb": "tt0056943",
+          "tmdb": 29486
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "last_watched_at": "2024-11-19T14:19:34.332761",
+      "movie": {
+        "title": "Blue Collar Comedy Tour: The Movie",
+        "year": 2003,
+        "ids": {
+          "trakt": 14231,
+          "slug": "blue-collar-comedy-tour-the-movie-2003",
+          "imdb": "tt0330069",
+          "tmdb": 23626
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "last_watched_at": "2024-12-15T14:19:34.332761",
+      "movie": {
+        "title": "InAPPropriate Comedy",
+        "year": 2013,
+        "ids": {
+          "trakt": 101665,
+          "slug": "inappropriate-comedy-2013",
+          "imdb": "tt1754811",
+          "tmdb": 156268
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "last_watched_at": "2024-10-19T14:19:34.332761",
+      "movie": {
+        "title": "The Broken Hearts Club: A Romantic Comedy",
+        "year": 2000,
+        "ids": {
+          "trakt": 13748,
+          "slug": "the-broken-hearts-club-a-romantic-comedy-2000",
+          "imdb": "tt0222850",
+          "tmdb": 22597
+        },
+        "rating": null,
+        "votes": null
+      }
+    }
+  ],
+  "watched_shows": [],
+  "movie_ratings": [
+    {
+      "rating": 9,
+      "rated_at": "2024-08-03T14:19:34.332761",
+      "movie": {
+        "title": "The Comedy",
+        "year": 1984,
+        "ids": {
+          "trakt": 192633,
+          "slug": "the-comedy-1984",
+          "imdb": "tt0087097",
+          "tmdb": 313047
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "rating": 9,
+      "rated_at": "2025-06-23T14:19:34.332761",
+      "movie": {
+        "title": "Comedy",
+        "year": 1994,
+        "ids": {
+          "trakt": 646422,
+          "slug": "comedy-1994",
+          "imdb": null,
+          "tmdb": 812682
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "rating": 7,
+      "rated_at": "2024-09-04T14:19:34.332761",
+      "movie": {
+        "title": "Comedy",
+        "year": null,
+        "ids": {
+          "trakt": 1111036,
+          "slug": "comedy-1111036",
+          "imdb": null,
+          "tmdb": 1360929
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "rating": 9,
+      "rated_at": "2025-05-09T14:19:34.332761",
+      "movie": {
+        "title": "The Comedians of Comedy",
+        "year": 2005,
+        "ids": {
+          "trakt": 10148,
+          "slug": "the-comedians-of-comedy-2005",
+          "imdb": "tt0451021",
+          "tmdb": 16452
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "rating": 6,
+      "rated_at": "2024-09-06T14:19:34.332761",
+      "movie": {
+        "title": "The King of Comedy",
+        "year": 1982,
+        "ids": {
+          "trakt": 220,
+          "slug": "the-king-of-comedy-1982",
+          "imdb": "tt0085794",
+          "tmdb": 262
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "rating": 6,
+      "rated_at": "2024-09-28T14:19:34.332761",
+      "movie": {
+        "title": "Comedy's Dirtiest Dozen",
+        "year": 1988,
+        "ids": {
+          "trakt": 51856,
+          "slug": "comedy-s-dirtiest-dozen-1988",
+          "imdb": "tt0188516",
+          "tmdb": 70770
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "rating": 9,
+      "rated_at": "2025-01-17T14:19:34.332761",
+      "movie": {
+        "title": "The Comedians of Comedy: Live at the El Rey",
+        "year": 2006,
+        "ids": {
+          "trakt": 34841,
+          "slug": "the-comedians-of-comedy-live-at-the-el-rey-2006",
+          "imdb": "tt0880445",
+          "tmdb": 49925
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "rating": 7,
+      "rated_at": "2025-06-25T14:19:34.332761",
+      "movie": {
+        "title": "Why We Laugh: Black Comedians on Black Comedy",
+        "year": 2009,
+        "ids": {
+          "trakt": 23637,
+          "slug": "why-we-laugh-black-comedians-on-black-comedy-2009",
+          "imdb": "tt1124061",
+          "tmdb": 37040
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "rating": 6,
+      "rated_at": "2024-10-24T14:19:34.332761",
+      "movie": {
+        "title": "Louis C.K.: Live at The Comedy Store",
+        "year": 2015,
+        "ids": {
+          "trakt": 202273,
+          "slug": "louis-c-k-live-at-the-comedy-store-2015",
+          "imdb": "tt4368814",
+          "tmdb": 321594
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "rating": 7,
+      "rated_at": "2025-03-25T14:19:34.332761",
+      "movie": {
+        "title": "Comedy Central Roast of Justin Bieber",
+        "year": 2015,
+        "ids": {
+          "trakt": 802849,
+          "slug": "comedy-central-roast-of-justin-bieber-2015-03-30",
+          "imdb": "tt4504452",
+          "tmdb": 333103
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "rating": 8,
+      "rated_at": "2024-08-11T14:19:34.332761",
+      "movie": {
+        "title": "A Midsummer Night's Sex Comedy",
+        "year": 1982,
+        "ids": {
+          "trakt": 4111,
+          "slug": "a-midsummer-night-s-sex-comedy-1982",
+          "imdb": "tt0084329",
+          "tmdb": 8288
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "rating": 7,
+      "rated_at": "2025-04-03T14:19:34.332761",
+      "movie": {
+        "title": "The Original Kings of Comedy",
+        "year": 2000,
+        "ids": {
+          "trakt": 14226,
+          "slug": "the-original-kings-of-comedy-2000",
+          "imdb": "tt0236388",
+          "tmdb": 23618
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "rating": 6,
+      "rated_at": "2025-05-13T14:19:34.332761",
+      "movie": {
+        "title": "King of Comedy",
+        "year": 1999,
+        "ids": {
+          "trakt": 37529,
+          "slug": "king-of-comedy-1999",
+          "imdb": "tt0188766",
+          "tmdb": 53168
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "rating": 8,
+      "rated_at": "2025-01-06T14:19:34.332761",
+      "movie": {
+        "title": "Comedy Central Roast of Bruce Willis",
+        "year": 2018,
+        "ids": {
+          "trakt": 387979,
+          "slug": "comedy-central-roast-of-bruce-willis-2018",
+          "imdb": "tt8301054",
+          "tmdb": 536056
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "rating": 8,
+      "rated_at": "2025-06-22T14:19:34.332761",
+      "movie": {
+        "title": "Hannibal Buress: Comedy Camisado",
+        "year": 2016,
+        "ids": {
+          "trakt": 225465,
+          "slug": "hannibal-buress-comedy-camisado-2016",
+          "imdb": "tt5352432",
+          "tmdb": 378137
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "rating": 7,
+      "rated_at": "2024-10-23T14:19:34.332761",
+      "movie": {
+        "title": "Comedy Central Roast of James Franco",
+        "year": 2013,
+        "ids": {
+          "trakt": 193860,
+          "slug": "comedy-central-roast-of-james-franco-2013",
+          "imdb": "tt3098812",
+          "tmdb": 300302
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "rating": 6,
+      "rated_at": "2025-01-30T14:19:34.332761",
+      "movie": {
+        "title": "Jim Gaffigan: Comedy Monster",
+        "year": 2021,
+        "ids": {
+          "trakt": 723980,
+          "slug": "jim-gaffigan-comedy-monster-2021",
+          "imdb": "tt15907298",
+          "tmdb": 903303
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "rating": 7,
+      "rated_at": "2024-08-03T14:19:34.332761",
+      "movie": {
+        "title": "Comedy Central Roast of Donald Trump",
+        "year": 2011,
+        "ids": {
+          "trakt": 210162,
+          "slug": "comedy-central-roast-of-donald-trump-2011",
+          "imdb": "tt1865333",
+          "tmdb": 329243
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "rating": 9,
+      "rated_at": "2025-06-15T14:19:34.332761",
+      "movie": {
+        "title": "Def Comedy Jam 25",
+        "year": 2017,
+        "ids": {
+          "trakt": 325202,
+          "slug": "def-comedy-jam-25-2017",
+          "imdb": "tt7427130",
+          "tmdb": 478054
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "rating": 6,
+      "rated_at": "2024-09-28T14:19:34.332761",
+      "movie": {
+        "title": "The Comedy of Terrors",
+        "year": 1964,
+        "ids": {
+          "trakt": 18562,
+          "slug": "the-comedy-of-terrors-1964",
+          "imdb": "tt0056943",
+          "tmdb": 29486
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "rating": 8,
+      "rated_at": "2024-12-20T14:19:34.332761",
+      "movie": {
+        "title": "Blue Collar Comedy Tour: The Movie",
+        "year": 2003,
+        "ids": {
+          "trakt": 14231,
+          "slug": "blue-collar-comedy-tour-the-movie-2003",
+          "imdb": "tt0330069",
+          "tmdb": 23626
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "rating": 6,
+      "rated_at": "2024-12-01T14:19:34.332761",
+      "movie": {
+        "title": "InAPPropriate Comedy",
+        "year": 2013,
+        "ids": {
+          "trakt": 101665,
+          "slug": "inappropriate-comedy-2013",
+          "imdb": "tt1754811",
+          "tmdb": 156268
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "rating": 9,
+      "rated_at": "2024-07-16T14:19:34.332761",
+      "movie": {
+        "title": "The Broken Hearts Club: A Romantic Comedy",
+        "year": 2000,
+        "ids": {
+          "trakt": 13748,
+          "slug": "the-broken-hearts-club-a-romantic-comedy-2000",
+          "imdb": "tt0222850",
+          "tmdb": 22597
+        },
+        "rating": null,
+        "votes": null
+      }
+    }
+  ],
+  "show_ratings": [],
+  "episode_ratings": []
+}

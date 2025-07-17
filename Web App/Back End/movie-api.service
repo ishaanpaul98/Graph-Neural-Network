@@ -1,0 +1,14 @@
+[Unit]
+Description=Movie Recommendation API
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/movie-api
+ExecStart=/home/ubuntu/movie-api/start_server.sh
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target 

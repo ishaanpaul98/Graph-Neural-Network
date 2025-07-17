@@ -1,0 +1,476 @@
+{
+  "username": "drama_critic",
+  "collected_at": "2025-07-03T14:17:26.010757",
+  "watched_movies": [
+    {
+      "last_watched_at": "2024-10-25T14:17:26.010757",
+      "movie": {
+        "title": "Drama",
+        "year": 2010,
+        "ids": {
+          "trakt": 58777,
+          "slug": "drama-2010",
+          "imdb": "tt1365451",
+          "tmdb": 79168
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "last_watched_at": "2025-03-30T14:17:26.010757",
+      "movie": {
+        "title": "drama",
+        "year": null,
+        "ids": {
+          "trakt": 439893,
+          "slug": "drama",
+          "imdb": null,
+          "tmdb": 593690
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "last_watched_at": "2025-05-07T14:17:26.010757",
+      "movie": {
+        "title": "Drama",
+        "year": 2019,
+        "ids": {
+          "trakt": 444132,
+          "slug": "drama-2019-03-28",
+          "imdb": null,
+          "tmdb": 598237
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "last_watched_at": "2025-01-08T14:17:26.010757",
+      "movie": {
+        "title": "Drama",
+        "year": 2015,
+        "ids": {
+          "trakt": 618182,
+          "slug": "drama-2015",
+          "imdb": null,
+          "tmdb": 781056
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "last_watched_at": "2025-04-20T14:17:26.010757",
+      "movie": {
+        "title": "Drama",
+        "year": 1960,
+        "ids": {
+          "trakt": 571380,
+          "slug": "drama-1960",
+          "imdb": "tt1946200",
+          "tmdb": 729114
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "last_watched_at": "2024-11-08T14:17:26.010757",
+      "movie": {
+        "title": "Drama",
+        "year": 2019,
+        "ids": {
+          "trakt": 436628,
+          "slug": "drama-2019",
+          "imdb": "tt10050608",
+          "tmdb": 589511
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "last_watched_at": "2024-07-11T14:17:26.010757",
+      "movie": {
+        "title": "The Drama",
+        "year": null,
+        "ids": {
+          "trakt": 1083999,
+          "slug": "the-drama",
+          "imdb": "tt33071426",
+          "tmdb": 1325734
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "last_watched_at": "2025-06-25T14:17:26.010757",
+      "movie": {
+        "title": "I'm the Drama",
+        "year": 2023,
+        "ids": {
+          "trakt": 1051370,
+          "slug": "i-m-the-drama-2023",
+          "imdb": null,
+          "tmdb": 1291891
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "last_watched_at": "2025-01-11T14:17:26.010757",
+      "movie": {
+        "title": "Confessions of a Teenage Drama Queen",
+        "year": 2004,
+        "ids": {
+          "trakt": 6265,
+          "slug": "confessions-of-a-teenage-drama-queen-2004",
+          "imdb": "tt0361467",
+          "tmdb": 11132
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "last_watched_at": "2024-12-06T14:17:26.010757",
+      "movie": {
+        "title": "Eating Out: Drama Camp",
+        "year": 2011,
+        "ids": {
+          "trakt": 52641,
+          "slug": "eating-out-drama-camp-2011",
+          "imdb": "tt1833845",
+          "tmdb": 71744
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "last_watched_at": "2024-10-18T14:17:26.010757",
+      "movie": {
+        "title": "Return to Eden Prairie: 25 Years of Mystery Science Theater 3000",
+        "year": 2013,
+        "ids": {
+          "trakt": 185527,
+          "slug": "return-to-eden-prairie-25-years-of-mystery-science-theater-3000-2013",
+          "imdb": "tt3425472",
+          "tmdb": 288506
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "last_watched_at": "2024-11-17T14:17:26.010757",
+      "movie": {
+        "title": "Thriller",
+        "year": 1979,
+        "ids": {
+          "trakt": 146221,
+          "slug": "thriller-1979",
+          "imdb": "tt0080019",
+          "tmdb": 239622
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "last_watched_at": "2024-12-15T14:17:26.010757",
+      "movie": {
+        "title": "Guardians of the Galaxy Vol. 2",
+        "year": 2017,
+        "ids": {
+          "trakt": 181256,
+          "slug": "guardians-of-the-galaxy-vol-2-2017",
+          "imdb": "tt3896198",
+          "tmdb": 283995
+        },
+        "rating": 7.856463278481627,
+        "votes": 61803
+      }
+    },
+    {
+      "last_watched_at": "2024-08-18T14:17:26.010757",
+      "movie": {
+        "title": "Fantasy",
+        "year": 1979,
+        "ids": {
+          "trakt": 1168588,
+          "slug": "fantasy-1979",
+          "imdb": "tt0830606",
+          "tmdb": 1428610
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "last_watched_at": "2025-01-03T14:17:26.010757",
+      "movie": {
+        "title": "Adventure",
+        "year": 2020,
+        "ids": {
+          "trakt": 595806,
+          "slug": "adventure-2020-11-03",
+          "imdb": null,
+          "tmdb": 756825
+        },
+        "rating": null,
+        "votes": null
+      }
+    }
+  ],
+  "watched_shows": [],
+  "movie_ratings": [
+    {
+      "rating": 10,
+      "rated_at": "2025-04-14T14:17:26.010757",
+      "movie": {
+        "title": "Drama",
+        "year": 2010,
+        "ids": {
+          "trakt": 58777,
+          "slug": "drama-2010",
+          "imdb": "tt1365451",
+          "tmdb": 79168
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "rating": 6,
+      "rated_at": "2024-08-27T14:17:26.010757",
+      "movie": {
+        "title": "drama",
+        "year": null,
+        "ids": {
+          "trakt": 439893,
+          "slug": "drama",
+          "imdb": null,
+          "tmdb": 593690
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "rating": 10,
+      "rated_at": "2025-04-22T14:17:26.010757",
+      "movie": {
+        "title": "Drama",
+        "year": 2019,
+        "ids": {
+          "trakt": 444132,
+          "slug": "drama-2019-03-28",
+          "imdb": null,
+          "tmdb": 598237
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "rating": 7,
+      "rated_at": "2024-07-17T14:17:26.010757",
+      "movie": {
+        "title": "Drama",
+        "year": 2015,
+        "ids": {
+          "trakt": 618182,
+          "slug": "drama-2015",
+          "imdb": null,
+          "tmdb": 781056
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "rating": 5,
+      "rated_at": "2024-07-30T14:17:26.010757",
+      "movie": {
+        "title": "Drama",
+        "year": 1960,
+        "ids": {
+          "trakt": 571380,
+          "slug": "drama-1960",
+          "imdb": "tt1946200",
+          "tmdb": 729114
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "rating": 10,
+      "rated_at": "2024-09-10T14:17:26.010757",
+      "movie": {
+        "title": "Drama",
+        "year": 2019,
+        "ids": {
+          "trakt": 436628,
+          "slug": "drama-2019",
+          "imdb": "tt10050608",
+          "tmdb": 589511
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "rating": 7,
+      "rated_at": "2024-09-23T14:17:26.010757",
+      "movie": {
+        "title": "The Drama",
+        "year": null,
+        "ids": {
+          "trakt": 1083999,
+          "slug": "the-drama",
+          "imdb": "tt33071426",
+          "tmdb": 1325734
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "rating": 5,
+      "rated_at": "2024-07-10T14:17:26.010757",
+      "movie": {
+        "title": "I'm the Drama",
+        "year": 2023,
+        "ids": {
+          "trakt": 1051370,
+          "slug": "i-m-the-drama-2023",
+          "imdb": null,
+          "tmdb": 1291891
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "rating": 5,
+      "rated_at": "2024-10-20T14:17:26.010757",
+      "movie": {
+        "title": "Confessions of a Teenage Drama Queen",
+        "year": 2004,
+        "ids": {
+          "trakt": 6265,
+          "slug": "confessions-of-a-teenage-drama-queen-2004",
+          "imdb": "tt0361467",
+          "tmdb": 11132
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "rating": 7,
+      "rated_at": "2024-10-07T14:17:26.010757",
+      "movie": {
+        "title": "Eating Out: Drama Camp",
+        "year": 2011,
+        "ids": {
+          "trakt": 52641,
+          "slug": "eating-out-drama-camp-2011",
+          "imdb": "tt1833845",
+          "tmdb": 71744
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "rating": 5,
+      "rated_at": "2024-12-24T14:17:26.010757",
+      "movie": {
+        "title": "Return to Eden Prairie: 25 Years of Mystery Science Theater 3000",
+        "year": 2013,
+        "ids": {
+          "trakt": 185527,
+          "slug": "return-to-eden-prairie-25-years-of-mystery-science-theater-3000-2013",
+          "imdb": "tt3425472",
+          "tmdb": 288506
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "rating": 4,
+      "rated_at": "2024-08-25T14:17:26.010757",
+      "movie": {
+        "title": "Thriller",
+        "year": 1979,
+        "ids": {
+          "trakt": 146221,
+          "slug": "thriller-1979",
+          "imdb": "tt0080019",
+          "tmdb": 239622
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "rating": 6,
+      "rated_at": "2025-05-01T14:17:26.010757",
+      "movie": {
+        "title": "Guardians of the Galaxy Vol. 2",
+        "year": 2017,
+        "ids": {
+          "trakt": 181256,
+          "slug": "guardians-of-the-galaxy-vol-2-2017",
+          "imdb": "tt3896198",
+          "tmdb": 283995
+        },
+        "rating": 7.856463278481627,
+        "votes": 61803
+      }
+    },
+    {
+      "rating": 9,
+      "rated_at": "2025-03-29T14:17:26.010757",
+      "movie": {
+        "title": "Fantasy",
+        "year": 1979,
+        "ids": {
+          "trakt": 1168588,
+          "slug": "fantasy-1979",
+          "imdb": "tt0830606",
+          "tmdb": 1428610
+        },
+        "rating": null,
+        "votes": null
+      }
+    },
+    {
+      "rating": 8,
+      "rated_at": "2025-05-02T14:17:26.010757",
+      "movie": {
+        "title": "Adventure",
+        "year": 2020,
+        "ids": {
+          "trakt": 595806,
+          "slug": "adventure-2020-11-03",
+          "imdb": null,
+          "tmdb": 756825
+        },
+        "rating": null,
+        "votes": null
+      }
+    }
+  ],
+  "show_ratings": [],
+  "episode_ratings": []
+}
