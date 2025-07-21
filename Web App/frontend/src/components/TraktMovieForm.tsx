@@ -10,8 +10,7 @@ import {
   TextField,
   Chip,
   Card,
-  CardContent,
-  Grid
+  CardContent
 } from '@mui/material';
 import { TrendingUp, Star, Login, Logout } from '@mui/icons-material';
 import axios from 'axios';
@@ -354,37 +353,40 @@ const TraktMovieForm: React.FC<TraktMovieFormProps> = ({ onRecommendations }) =>
             Click on a trending movie to add it to your selection
           </Typography>
           
-          <Grid container spacing={2}>
+          <Box sx={{ 
+            display: 'grid', 
+            gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' },
+            gap: 2 
+          }}>
             {trendingMovies.slice(0, 10).map((movie, index) => (
-              <Grid xs={12} sm={6} md={4} key={index}>
-                <Card 
-                  variant="outlined" 
-                  sx={{ 
-                    cursor: 'pointer',
-                    '&:hover': { backgroundColor: 'action.hover' }
-                  }}
-                  onClick={() => addFromTrending(movie)}
-                >
-                  <CardContent sx={{ p: 2 }}>
-                    <Typography variant="subtitle2" noWrap>
-                      {movie.title}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" noWrap>
-                      {movie.year} • {movie.watchers} watching
-                    </Typography>
-                    {movie.rating && (
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 1 }}>
-                        <Star sx={{ fontSize: 16, color: 'warning.main' }} />
-                        <Typography variant="body2">
-                          {movie.rating.toFixed(1)}
-                        </Typography>
-                      </Box>
-                    )}
-                  </CardContent>
-                </Card>
-              </Grid>
+              <Card 
+                key={index}
+                variant="outlined" 
+                sx={{ 
+                  cursor: 'pointer',
+                  '&:hover': { backgroundColor: 'action.hover' }
+                }}
+                onClick={() => addFromTrending(movie)}
+              >
+                <CardContent sx={{ p: 2 }}>
+                  <Typography variant="subtitle2" noWrap>
+                    {movie.title}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" noWrap>
+                    {movie.year} • {movie.watchers} watching
+                  </Typography>
+                  {movie.rating && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 1 }}>
+                      <Star sx={{ fontSize: 16, color: 'warning.main' }} />
+                      <Typography variant="body2">
+                        {movie.rating.toFixed(1)}
+                      </Typography>
+                    </Box>
+                  )}
+                </CardContent>
+              </Card>
             ))}
-          </Grid>
+          </Box>
         </CardContent>
       </Card>
     </Box>
