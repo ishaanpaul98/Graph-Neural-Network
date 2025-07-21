@@ -1,7 +1,7 @@
 // Production API Configuration
 export const API_CONFIG = {
   // Your EC2 Backend API (handles both your GNN model and Trakt API proxying)
-  BACKEND_BASE_URL: import.meta.env.VITE_BACKEND_BASE_URL || 'http://54.218.45.114:8000',  // Your EC2 IP with port
+  BACKEND_BASE_URL: import.meta.env.VITE_BACKEND_BASE_URL || 'https://api.ishaanpaul.com',
   
   ENDPOINTS: {
     // Your EC2 Backend endpoints (GNN model)
