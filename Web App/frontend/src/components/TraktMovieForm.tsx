@@ -11,12 +11,9 @@ import {
   Chip,
   Card,
   CardContent,
-  Grid,
-  Divider,
-  IconButton,
-  Tooltip
+  Grid
 } from '@mui/material';
-import { Search, TrendingUp, Star, Login, Logout } from '@mui/icons-material';
+import { TrendingUp, Star, Login, Logout } from '@mui/icons-material';
 import axios from 'axios';
 import { API_URLS } from '../config/api';
 
@@ -359,7 +356,7 @@ const TraktMovieForm: React.FC<TraktMovieFormProps> = ({ onRecommendations }) =>
           
           <Grid container spacing={2}>
             {trendingMovies.slice(0, 10).map((movie, index) => (
-              <Grid item xs={12} sm={6} md={4} key={index}>
+              <Grid xs={12} sm={6} md={4} key={index}>
                 <Card 
                   variant="outlined" 
                   sx={{ 
