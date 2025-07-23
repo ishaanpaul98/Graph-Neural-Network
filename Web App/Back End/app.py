@@ -22,7 +22,7 @@ app.secret_key = os.getenv('FLASK_SECRET_KEY', secrets.token_hex(16))
 CORS(app, resources={
     r"/*": {
         "origins": [
-            "http://localhost:5173",
+            "http://localhost:5173",  # Frontend development server
             "http://localhost:5174",
             "http://localhost:3000",
             "http://localhost:8000",
@@ -57,6 +57,7 @@ def after_request(response):
     # Add CORS headers explicitly
     origin = request.headers.get('Origin')
     allowed_origins = [
+        'http://localhost:5173',  # Frontend development server
         'https://main.d2p9ieiqdwymip.amplifyapp.com',
         'https://dev.d2p9ieiqdwymip.amplifyapp.com'
     ]
@@ -286,7 +287,7 @@ def trakt_callback():
         session['trakt_session_id'] = session_id
         
         # Redirect to frontend with success and session ID
-        return redirect(f'http://localhost:8000/auth-success?session_id={session_id}')
+        return redirect(f'https://main.d2p9ieiqdwymip.amplifyapp.com/auth-success?session_id={session_id}')
         
     except Exception as e:
         print(f"Error in trakt_callback: {str(e)}")
