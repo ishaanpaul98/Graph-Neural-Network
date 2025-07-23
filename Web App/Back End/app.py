@@ -28,7 +28,8 @@ CORS(app, resources={
             "http://localhost:8000",
             "https://*.amplifyapp.com",  # AWS Amplify domains
             "https://*.amplifyapp.net",  # Alternative Amplify domains
-            "https://main.d2p9ieiqdwymip.amplifyapp.com",  # Your specific Amplify domain
+            "https://main.d2p9ieiqdwymip.amplifyapp.com",  # Your main branch Amplify domain
+            "https://dev.d2p9ieiqdwymip.amplifyapp.com",  # Your dev branch Amplify domain
             "http://44.249.240.187:8000"  # Your EC2 IP (for testing)
         ],
         "methods": ["GET", "POST", "OPTIONS"],
@@ -54,7 +55,15 @@ def after_request(response):
     #print('Body:', response.get_data())
     
     # Add CORS headers explicitly
-    response.headers.add('Access-Control-Allow-Origin', 'https://main.d2p9ieiqdwymip.amplifyapp.com')
+    origin = request.headers.get('Origin')
+    allowed_origins = [
+        'https://main.d2p9ieiqdwymip.amplifyapp.com',
+        'https://dev.d2p9ieiqdwymip.amplifyapp.com'
+    ]
+    
+    if origin in allowed_origins:
+        response.headers.add('Access-Control-Allow-Origin', origin)
+    
     response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Accept,X-Session-ID,Authorization')
     response.headers.add('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
     response.headers.add('Access-Control-Allow-Credentials', 'true')
