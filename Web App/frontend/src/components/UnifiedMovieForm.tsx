@@ -10,12 +10,9 @@ import {
   TextField,
   Chip,
   Card,
-  CardContent,
-  ToggleButton,
-  ToggleButtonGroup,
-  Divider
+  CardContent
 } from '@mui/material';
-import { TrendingUp, Star, Login, Logout, Movie, Cloud } from '@mui/icons-material';
+import { TrendingUp, Star, Login, Logout } from '@mui/icons-material';
 import axios from 'axios';
 import { API_URLS } from '../config/api';
 
@@ -29,8 +26,6 @@ interface FormData {
 
 interface MovieOption {
   title: string;
-  id?: number;
-  popularity?: number;
   year?: number;
   type?: 'movie' | 'show';
   ids?: {
@@ -61,14 +56,14 @@ const UnifiedMovieForm: React.FC<UnifiedMovieFormProps> = ({ onRecommendations }
   const { setValue, formState: { errors }, handleSubmit } = useForm<FormData>();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [movieOptions, setMovieOptions] = useState<MovieOption[]>([]);
+
   const [searchResults, setSearchResults] = useState<MovieOption[]>([]);
   const [selectedMovies, setSelectedMovies] = useState<string[]>([]);
   const [trendingMovies, setTrendingMovies] = useState<TrendingMovie[]>([]);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [searchLoading, setSearchLoading] = useState(false);
-  const [mode, setMode] = useState<'original' | 'trakt'>('original');
+
 
   useEffect(() => {
     // Check if user is authenticated for Trakt
@@ -78,12 +73,8 @@ const UnifiedMovieForm: React.FC<UnifiedMovieFormProps> = ({ onRecommendations }
       setIsAuthenticated(true);
     }
 
-    // Load initial data based on mode
-    if (mode === 'original') {
-      loadOriginalMovies();
-    } else {
-      loadTrendingMovies();
-    }
+    // Load trending movies for Trakt mode
+    loadTrendingMovies();
 
     // Listen for authentication success message from popup
     const handleMessage = (event: MessageEvent) => {
@@ -97,27 +88,9 @@ const UnifiedMovieForm: React.FC<UnifiedMovieFormProps> = ({ onRecommendations }
 
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, [mode]);
+  }, []);
 
-  const loadOriginalMovies = async () => {
-    try {
-      console.log('Fetching movies from backend...');
-      const response = await axios.get(API_URLS.MOVIES, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        withCredentials: true,
-      });
-      
-      if (response.data && response.data.movies) {
-        setMovieOptions(response.data.movies);
-      }
-    } catch (error) {
-      console.error('Error fetching movies:', error);
-      setError('Failed to fetch available movies');
-    }
-  };
+
 
   const loadTrendingMovies = async () => {
     try {
@@ -130,13 +103,7 @@ const UnifiedMovieForm: React.FC<UnifiedMovieFormProps> = ({ onRecommendations }
     }
   };
 
-  const handleModeChange = (_event: React.MouseEvent<HTMLElement>, newMode: 'original' | 'trakt' | null) => {
-    if (newMode !== null) {
-      setMode(newMode);
-      setSelectedMovies([]);
-      setError(null);
-    }
-  };
+
 
   const handleTraktAuth = async () => {
     try {
@@ -205,15 +172,15 @@ const UnifiedMovieForm: React.FC<UnifiedMovieFormProps> = ({ onRecommendations }
       setLoading(true);
       setError(null);
       
-      if (mode === 'trakt' && !isAuthenticated) {
+      if (!isAuthenticated) {
         setError('Please authenticate with Trakt first');
         return;
       }
 
-      const endpoint = mode === 'trakt' ? API_URLS.TRAKT_RECOMMEND : API_URLS.RECOMMEND;
-      const config = mode === 'trakt' ? {
+      const endpoint = API_URLS.TRAKT_RECOMMEND;
+      const config = {
         headers: { 'X-Session-ID': sessionId }
-      } : {};
+      };
 
       const response = await axios.post(endpoint, {
         movies: selectedMovies
@@ -256,15 +223,11 @@ const UnifiedMovieForm: React.FC<UnifiedMovieFormProps> = ({ onRecommendations }
   };
 
   const getCurrentOptions = () => {
-    return mode === 'original' ? movieOptions : searchResults;
+    return searchResults;
   };
 
   const getOptionLabel = (option: MovieOption) => {
-    if (mode === 'original') {
-      return option.title;
-    } else {
-      return `${option.title}${option.year ? ` (${option.year})` : ''}`;
-    }
+    return `${option.title}${option.year ? ` (${option.year})` : ''}`;
   };
 
   return (
@@ -272,42 +235,8 @@ const UnifiedMovieForm: React.FC<UnifiedMovieFormProps> = ({ onRecommendations }
       <Typography variant="h4" gutterBottom align="center">
         Movie Recommendations
       </Typography>
-      
-      {/* Mode Selection */}
-      <Card sx={{ mb: 3 }}>
-        <CardContent>
-          <Typography variant="h6" gutterBottom align="center">
-            Choose Your Recommendation Source
-          </Typography>
-          <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-            <ToggleButtonGroup
-              value={mode}
-              exclusive
-              onChange={handleModeChange}
-              aria-label="recommendation mode"
-            >
-              <ToggleButton value="original" aria-label="original dataset">
-                <Movie sx={{ mr: 1 }} />
-                Original Dataset
-              </ToggleButton>
-              <ToggleButton value="trakt" aria-label="trakt integration">
-                <Cloud sx={{ mr: 1 }} />
-                Trakt Integration
-              </ToggleButton>
-            </ToggleButtonGroup>
-          </Box>
-          
-          <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 2 }}>
-            {mode === 'original' 
-              ? 'Get recommendations from our trained model using the MovieLens dataset'
-              : 'Connect to Trakt for personalized recommendations based on your watch history'
-            }
-          </Typography>
-        </CardContent>
-      </Card>
 
-      {/* Trakt Authentication (only show when in Trakt mode) */}
-      {mode === 'trakt' && (
+      {/* Trakt Authentication */}
         <Card sx={{ mb: 3 }}>
           <CardContent>
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -334,7 +263,6 @@ const UnifiedMovieForm: React.FC<UnifiedMovieFormProps> = ({ onRecommendations }
             </Box>
           </CardContent>
         </Card>
-      )}
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
@@ -357,7 +285,7 @@ const UnifiedMovieForm: React.FC<UnifiedMovieFormProps> = ({ onRecommendations }
               value={getCurrentOptions().find(option => option.title === selectedMovies[index]) || null}
               onChange={(_, newValue) => handleMovieChange(index, newValue)}
               onInputChange={(_, newInputValue) => {
-                if (mode === 'trakt' && newInputValue.length > 2) {
+                if (newInputValue.length > 2) {
                   handleSearch(newInputValue);
                 }
               }}
@@ -387,22 +315,12 @@ const UnifiedMovieForm: React.FC<UnifiedMovieFormProps> = ({ onRecommendations }
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
                     <Box>
                       <Typography variant="body1">{option.title}</Typography>
-                      {mode === 'trakt' && (
-                        <Typography variant="body2" color="text.secondary">
-                          {option.year} • {option.type} • {option.overview?.substring(0, 100)}...
-                        </Typography>
-                      )}
+                      <Typography variant="body2" color="text.secondary">
+                        {option.year} • {option.type} • {option.overview?.substring(0, 100)}...
+                      </Typography>
                     </Box>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      {mode === 'original' && option.popularity && (
-                        <Chip 
-                          label={`${option.popularity} ratings`} 
-                          size="small" 
-                          color="primary" 
-                          variant="outlined"
-                        />
-                      )}
-                      {mode === 'trakt' && option.rating && (
+                      {option.rating && (
                         <Chip 
                           icon={<Star />}
                           label={`${option.rating.toFixed(1)}`} 
@@ -411,7 +329,7 @@ const UnifiedMovieForm: React.FC<UnifiedMovieFormProps> = ({ onRecommendations }
                           variant="outlined"
                         />
                       )}
-                      {mode === 'trakt' && option.type && (
+                      {option.type && (
                         <Chip 
                           label={option.type} 
                           size="small" 
@@ -433,7 +351,7 @@ const UnifiedMovieForm: React.FC<UnifiedMovieFormProps> = ({ onRecommendations }
             color="primary"
             fullWidth
             sx={{ mt: 2 }}
-            disabled={loading || (mode === 'trakt' && !isAuthenticated) || selectedMovies.length !== 5 || selectedMovies.some(movie => !movie)}
+            disabled={loading || !isAuthenticated || selectedMovies.length !== 5 || selectedMovies.some(movie => !movie)}
             onClick={handleSubmit(onSubmit)}
           >
             {loading ? <CircularProgress size={24} /> : 'Get Recommendations'}
@@ -441,8 +359,7 @@ const UnifiedMovieForm: React.FC<UnifiedMovieFormProps> = ({ onRecommendations }
         </CardContent>
       </Card>
 
-      {/* Trending Movies Section (only show when in Trakt mode) */}
-      {mode === 'trakt' && (
+      {/* Trending Movies Section */}
         <Card>
           <CardContent>
             <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -489,7 +406,6 @@ const UnifiedMovieForm: React.FC<UnifiedMovieFormProps> = ({ onRecommendations }
             </Box>
           </CardContent>
         </Card>
-      )}
     </Box>
   );
 };
