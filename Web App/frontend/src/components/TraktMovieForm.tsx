@@ -100,10 +100,11 @@ const TraktMovieForm: React.FC<TraktMovieFormProps> = ({ onRecommendations }) =>
       // Flatten and deduplicate by title
       const movies: MovieOption[] = [];
       const seen = new Set();
-      [
+      const arr: any[] = [
         ...(response.data.favorite_movies || []),
         ...(response.data.recently_watched_movies || [])
-      ].forEach((item: any) => {
+      ];
+      for (const item of arr as any[]) {
         const movie = item.movie || item.show;
         if (movie && !seen.has(movie.title)) {
           seen.add(movie.title);
@@ -117,7 +118,7 @@ const TraktMovieForm: React.FC<TraktMovieFormProps> = ({ onRecommendations }) =>
             votes: movie.votes
           });
         }
-      });
+      }
       setRecentAndFavs(movies);
     } catch (err) {
       console.error('Error fetching user history:', err);
@@ -127,7 +128,7 @@ const TraktMovieForm: React.FC<TraktMovieFormProps> = ({ onRecommendations }) =>
   const fetchTrendingMovies = async () => {
     try {
       const response = await axios.get(API_URLS.TRAKT_TRENDING, { params: { limit: 20 } });
-      setTrendingMovies((response.data.trending || []).map(item => ({
+      setTrendingMovies((response.data.trending || []).map((item: any) => ({
         title: item.title,
         year: item.year,
         type: 'movie',
