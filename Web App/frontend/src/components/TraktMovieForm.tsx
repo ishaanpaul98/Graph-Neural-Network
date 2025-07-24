@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { 
   Box, 
@@ -10,7 +10,8 @@ import {
   TextField,
   Chip,
   Card,
-  CardContent
+  CardContent,
+  Snackbar
 } from '@mui/material';
 import { TrendingUp, Star, Login, Logout } from '@mui/icons-material';
 import axios from 'axios';
@@ -57,11 +58,13 @@ const TraktMovieForm: React.FC<TraktMovieFormProps> = ({ onRecommendations }) =>
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchResults, setSearchResults] = useState<MovieOption[]>([]);
-  const [selectedMovies, setSelectedMovies] = useState<string[]>([]);
+  const [selectedMovies, setSelectedMovies] = useState<string[]>(['']);
   const [trendingMovies, setTrendingMovies] = useState<TrendingMovie[]>([]);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [searchLoading, setSearchLoading] = useState(false);
+  const [duplicateWarning, setDuplicateWarning] = useState(false);
+  const slotRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   useEffect(() => {
     // Check if user is authenticated (check for session ID in localStorage)
@@ -196,22 +199,58 @@ const TraktMovieForm: React.FC<TraktMovieFormProps> = ({ onRecommendations }) =>
 
   const handleMovieChange = (index: number, value: MovieOption | null) => {
     try {
+      if (value && selectedMovies.some((title, i) => i !== index && title === value.title)) {
+        setDuplicateWarning(true);
+        return;
+      }
       const newSelectedMovies = [...selectedMovies];
       newSelectedMovies[index] = value ? value.title : '';
       setSelectedMovies(newSelectedMovies);
       setValue(`movies.${index}`, value ? value.title : '');
+      setSearchResults([]); // Clear search results after selection
     } catch (err) {
       console.error('Error in handleMovieChange:', err);
     }
   };
 
+  const addSlot = () => {
+    if (selectedMovies.length < 15) {
+      setSelectedMovies([...selectedMovies, '']);
+      setTimeout(() => {
+        const lastIndex = selectedMovies.length;
+        slotRefs.current[lastIndex]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
+    }
+  };
+
+  const removeSlot = (index: number) => {
+    if (selectedMovies.length > 1) {
+      const newSelectedMovies = [...selectedMovies];
+      newSelectedMovies.splice(index, 1);
+      setSelectedMovies(newSelectedMovies);
+    }
+  };
+
   const addFromTrending = (movie: TrendingMovie) => {
-    const emptyIndex = selectedMovies.findIndex(movie => !movie);
+    if (selectedMovies.includes(movie.title)) {
+      setDuplicateWarning(true);
+      return;
+    }
+    const emptyIndex = selectedMovies.findIndex(m => !m);
     if (emptyIndex !== -1) {
       const newSelectedMovies = [...selectedMovies];
       newSelectedMovies[emptyIndex] = movie.title;
       setSelectedMovies(newSelectedMovies);
       setValue(`movies.${emptyIndex}`, movie.title);
+      setTimeout(() => {
+        slotRefs.current[emptyIndex]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
+    } else if (selectedMovies.length < 15) {
+      setSelectedMovies([...selectedMovies, movie.title]);
+      setValue(`movies.${selectedMovies.length}`, movie.title);
+      setTimeout(() => {
+        slotRefs.current[selectedMovies.length]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
     }
   };
 
@@ -262,71 +301,98 @@ const TraktMovieForm: React.FC<TraktMovieFormProps> = ({ onRecommendations }) =>
             Enter 5 Movies You Like
           </Typography>
           
-          {[...Array(5)].map((_, index) => (
-            <Autocomplete
-              key={index}
-              options={searchResults}
-              getOptionLabel={(option) => `${option.title}${option.year ? ` (${option.year})` : ''}`}
-              value={searchResults.find(option => option.title === selectedMovies[index]) || null}
-              onChange={(_, newValue) => handleMovieChange(index, newValue)}
-              onInputChange={(_, newInputValue) => {
-                if (newInputValue.length > 2) {
-                  handleSearch(newInputValue);
-                }
-              }}
-              loading={searchLoading}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label={`Movie ${index + 1}`}
-                  variant="outlined"
-                  margin="normal"
-                  error={!!errors.movies?.[index]}
-                  helperText={errors.movies?.[index]?.message}
-                  required
-                  InputProps={{
-                    ...params.InputProps,
-                    endAdornment: (
-                      <>
-                        {searchLoading ? <CircularProgress color="inherit" size={20} /> : null}
-                        {params.InputProps.endAdornment}
-                      </>
-                    ),
-                  }}
-                />
-              )}
-              renderOption={(props, option) => (
-                <li {...props}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
-                    <Box>
-                      <Typography variant="body1">{option.title}</Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {option.year} • {option.type} • {option.overview?.substring(0, 100)}...
-                      </Typography>
-                    </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      {option.rating && (
+          {selectedMovies.map((movie, index) => (
+            <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 1 }} ref={(el: HTMLDivElement | null) => { slotRefs.current[index] = el; }}>
+              <Autocomplete
+                options={searchResults.filter(option => !selectedMovies.some((title, i) => i !== index && title === option.title))}
+                getOptionLabel={(option) => `${option.title}${option.year ? ` (${option.year})` : ''}`}
+                value={searchResults.find(option => option.title === selectedMovies[index]) || null}
+                onChange={(_, newValue) => handleMovieChange(index, newValue)}
+                onInputChange={(_, newInputValue) => {
+                  if (newInputValue.length > 2) {
+                    handleSearch(newInputValue);
+                  }
+                }}
+                loading={searchLoading}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label={`Movie ${index + 1}`}
+                    variant="outlined"
+                    margin="normal"
+                    error={!!errors.movies?.[index]}
+                    helperText={errors.movies?.[index]?.message}
+                    required
+                    InputProps={{
+                      ...params.InputProps,
+                      endAdornment: (
+                        <>
+                          {searchLoading ? <CircularProgress color="inherit" size={20} /> : null}
+                          {params.InputProps.endAdornment}
+                        </>
+                      ),
+                    }}
+                  />
+                )}
+                renderOption={(props, option) => (
+                  <li {...props}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+                      <Box>
+                        <Typography variant="body1">{option.title}</Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {option.year} • {option.type} • {option.overview?.substring(0, 100)}...
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        {option.rating && (
+                          <Chip 
+                            icon={<Star />}
+                            label={`${option.rating.toFixed(1)}`} 
+                            size="small" 
+                            color="primary" 
+                            variant="outlined"
+                          />
+                        )}
                         <Chip 
-                          icon={<Star />}
-                          label={`${option.rating.toFixed(1)}`} 
+                          label={option.type} 
                           size="small" 
-                          color="primary" 
+                          color="secondary" 
                           variant="outlined"
                         />
-                      )}
-                      <Chip 
-                        label={option.type} 
-                        size="small" 
-                        color="secondary" 
-                        variant="outlined"
-                      />
+                      </Box>
                     </Box>
-                  </Box>
-                </li>
-              )}
-              sx={{ mb: 2 }}
-            />
+                  </li>
+                )}
+                sx={{ mb: 2, flex: 1 }}
+              />
+              <Button
+                onClick={() => removeSlot(index)}
+                disabled={selectedMovies.length <= 1}
+                color="error"
+                variant="outlined"
+                sx={{ height: 40 }}
+              >
+                Remove
+              </Button>
+            </Box>
           ))}
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+            <Button onClick={addSlot} disabled={selectedMovies.length >= 15} variant="contained">
+              Add Movie
+            </Button>
+            {selectedMovies.length >= 15 && (
+              <Typography variant="caption" color="text.secondary" sx={{ ml: 2 }}>
+                Maximum 15 movies allowed
+              </Typography>
+            )}
+          </Box>
+          <Snackbar
+            open={duplicateWarning}
+            autoHideDuration={3000}
+            onClose={() => setDuplicateWarning(false)}
+            message="This movie is already selected."
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+          />
 
           <Button
             type="submit"
@@ -334,7 +400,13 @@ const TraktMovieForm: React.FC<TraktMovieFormProps> = ({ onRecommendations }) =>
             color="primary"
             fullWidth
             sx={{ mt: 2 }}
-            disabled={loading || !isAuthenticated || selectedMovies.length !== 5 || selectedMovies.some(movie => !movie)}
+            disabled={
+              loading ||
+              !isAuthenticated ||
+              selectedMovies.length < 1 ||
+              selectedMovies.length > 15 ||
+              selectedMovies.some(movie => !movie)
+            }
             onClick={handleSubmit(onSubmit)}
           >
             {loading ? <CircularProgress size={24} /> : 'Get Recommendations'}

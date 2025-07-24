@@ -153,8 +153,8 @@ def get_recommendations():
             
         user_movies = data['movies']
         
-        if not isinstance(user_movies, list) or len(user_movies) != 5:
-            return jsonify({'error': 'Please provide exactly 5 movies'}), 400
+        if not isinstance(user_movies, list) or not (1 <= len(user_movies) <= 15):
+            return jsonify({'error': 'Please provide between 1 and 15 movies'}), 400
             
         print("\nInput movies:", user_movies)
             
@@ -364,8 +364,8 @@ def trakt_recommend():
         
         user_movies = data['movies']
         
-        if not isinstance(user_movies, list) or len(user_movies) != 5:
-            return jsonify({'error': 'Please provide exactly 5 movies'}), 400
+        if not isinstance(user_movies, list) or not (1 <= len(user_movies) <= 15):
+            return jsonify({'error': 'Please provide between 1 and 15 movies'}), 400
         
         # Get session ID from request
         session_id = request.headers.get('X-Session-ID')
@@ -500,6 +500,47 @@ def collect_trakt_data():
             
     except Exception as e:
         print(f"Error in collect_trakt_data: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/trakt/user-history', methods=['GET'])
+def trakt_user_history():
+    """Get user's recently watched and favorite movies/shows from Trakt"""
+    try:
+        # Get session ID from request
+        session_id = request.headers.get('X-Session-ID')
+        if not session_id:
+            return jsonify({'error': 'Session ID required'}), 401
+
+        # Get access token
+        access_token = session_manager.get_access_token(session_id)
+        if not access_token:
+            return jsonify({'error': 'Invalid or expired session'}), 401
+
+        # Get username (optional, default to 'me')
+        username = request.args.get('username', 'me')
+
+        # Get recently watched movies and shows
+        watched_movies = trakt_api.get_user_watched_movies(access_token, username)
+        watched_shows = trakt_api.get_user_watched_shows(access_token, username)
+
+        # Sort by most recent (if possible)
+        recently_watched_movies = sorted(watched_movies, key=lambda x: x.get('last_watched_at', ''), reverse=True)[:15]
+        recently_watched_shows = sorted(watched_shows, key=lambda x: x.get('last_watched_at', ''), reverse=True)[:15]
+
+        # Get favorite movies and shows (rated >= 8)
+        movie_ratings = trakt_api.get_user_ratings(access_token, username, 'movies')
+        show_ratings = trakt_api.get_user_ratings(access_token, username, 'shows')
+        favorite_movies = [m for m in movie_ratings if m.get('rating', 0) >= 8][:15]
+        favorite_shows = [s for s in show_ratings if s.get('rating', 0) >= 8][:15]
+
+        return jsonify({
+            'recently_watched_movies': recently_watched_movies,
+            'recently_watched_shows': recently_watched_shows,
+            'favorite_movies': favorite_movies,
+            'favorite_shows': favorite_shows
+        })
+    except Exception as e:
+        print(f"Error in trakt_user_history: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
