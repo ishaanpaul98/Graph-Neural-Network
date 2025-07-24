@@ -8,8 +8,13 @@ import {
   Alert,
   Autocomplete,
   TextField,
-  Chip
+  Chip,
+  Card,
+  CardContent,
+  IconButton,
+  Snackbar
 } from '@mui/material';
+import { Close as CloseIcon } from '@mui/icons-material';
 import axios from 'axios';
 import { API_URLS } from '../config/api';
 
@@ -28,11 +33,14 @@ interface MovieOption {
 }
 
 const MovieForm: React.FC<MovieFormProps> = ({ onRecommendations }) => {
-  const { setValue, formState: { errors }, handleSubmit } = useForm<FormData>();
+  const { handleSubmit } = useForm<FormData>();
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [movieOptions, setMovieOptions] = useState<MovieOption[]>([]);
-  const [selectedMovies, setSelectedMovies] = useState<string[]>([]);
+  const [selectedMovies, setSelectedMovies] = useState<MovieOption[]>([]);
+  const [searchResults, setSearchResults] = useState<MovieOption[]>([]);
+  const [duplicateWarning, setDuplicateWarning] = useState(false);
+  const [limitWarning, setLimitWarning] = useState(false);
 
   useEffect(() => {
     // Fetch available movies from the backend
@@ -104,7 +112,7 @@ const MovieForm: React.FC<MovieFormProps> = ({ onRecommendations }) => {
       setLoading(true);
       setError(null);
       const response = await axios.post(API_URLS.RECOMMEND, {
-        movies: selectedMovies
+        movies: selectedMovies.map(movie => movie.title)
       });
       onRecommendations(response.data.recommendations);
       setSelectedMovies([]);
@@ -116,22 +124,54 @@ const MovieForm: React.FC<MovieFormProps> = ({ onRecommendations }) => {
     }
   };
 
-  const handleMovieChange = (index: number, value: MovieOption | null) => {
+  const handleSearch = async (_: any, query: string) => {
+    if (!query || query.length < 2) {
+      setSearchResults([]);
+      return;
+    }
+
     try {
-      console.log('Movie change:', { index, value });
-      const newSelectedMovies = [...selectedMovies];
-      newSelectedMovies[index] = value ? value.title : '';
-      setSelectedMovies(newSelectedMovies);
-      setValue(`movies.${index}`, value ? value.title : '');
-    } catch (err) {
-      console.error('Error in handleMovieChange:', err);
+      const filteredMovies = movieOptions.filter(movie =>
+        movie.title.toLowerCase().includes(query.toLowerCase())
+      );
+      setSearchResults(filteredMovies.slice(0, 10)); // Limit to 10 results
+    } catch (error) {
+      console.error('Error searching movies:', error);
     }
   };
 
+  const handleSelectMovie = (movie: MovieOption | null) => {
+    if (!movie) return;
+
+    // Check for duplicates
+    if (selectedMovies.some(selected => selected.id === movie.id)) {
+      setDuplicateWarning(true);
+      return;
+    }
+
+    // Check limit
+    if (selectedMovies.length >= 15) {
+      setLimitWarning(true);
+      return;
+    }
+
+    setSelectedMovies(prev => [...prev, movie]);
+    setSearchResults([]); // Clear search results after selection
+  };
+
+  const removeMovie = (movieId: number) => {
+    setSelectedMovies(prev => prev.filter(movie => movie.id !== movieId));
+  };
+
+  // Combine all available options, filtering out already selected movies
+  const combinedOptions = [...movieOptions]
+    .filter(movie => !selectedMovies.some(selected => selected.id === movie.id))
+    .slice(0, 20); // Limit to 20 options for performance
+
   return (
-    <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ maxWidth: 600, mx: 'auto', p: 3 }}>
+    <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ maxWidth: 800, mx: 'auto', p: 3 }}>
       <Typography variant="h5" gutterBottom>
-        Enter 5 Movies You Like
+        Select Movies You Like (1-15)
       </Typography>
       
       {error && (
@@ -140,40 +180,72 @@ const MovieForm: React.FC<MovieFormProps> = ({ onRecommendations }) => {
         </Alert>
       )}
 
-      {[...Array(5)].map((_, index) => (
-        <Autocomplete
-          key={index}
-          options={movieOptions}
-          getOptionLabel={(option) => option.title}
-          value={movieOptions.find(option => option.title === selectedMovies[index]) || null}
-          onChange={(_, newValue) => handleMovieChange(index, newValue)}
-          renderInput={(params) => (
-            <TextField
-              {...params}
-              label={`Movie ${index + 1}`}
-              variant="outlined"
-              margin="normal"
-              error={!!errors.movies?.[index]}
-              helperText={errors.movies?.[index]?.message}
-              required
-            />
-          )}
-          renderOption={(props, option) => (
-            <li {...props}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-                <Typography>{option.title}</Typography>
-                <Chip 
-                  label={`${option.popularity} ratings`} 
-                  size="small" 
-                  color="primary" 
-                  variant="outlined"
-                />
-              </Box>
-            </li>
-          )}
-          sx={{ mb: 2 }}
-        />
-      ))}
+      {/* Single Search Bar */}
+      <Autocomplete
+        options={combinedOptions}
+        getOptionLabel={(option) => option.title}
+        onChange={(_, newValue) => handleSelectMovie(newValue)}
+        onInputChange={handleSearch}
+        renderInput={(params) => (
+          <TextField
+            {...params}
+            label="Search for movies..."
+            variant="outlined"
+            margin="normal"
+            fullWidth
+          />
+        )}
+        renderOption={(props, option) => (
+          <li {...props}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+              <Typography>{option.title}</Typography>
+              <Chip 
+                label={`${option.popularity} ratings`} 
+                size="small" 
+                color="primary" 
+                variant="outlined"
+              />
+            </Box>
+          </li>
+        )}
+        sx={{ mb: 3 }}
+      />
+
+      {/* Selected Movies Display */}
+      {selectedMovies.length > 0 && (
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="h6" gutterBottom>
+            Selected Movies ({selectedMovies.length}/15)
+          </Typography>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+            {selectedMovies.map((movie) => (
+              <Card key={movie.id} sx={{ minWidth: 200, maxWidth: 300 }}>
+                <CardContent sx={{ pb: 1 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <Typography variant="body1" sx={{ flex: 1, mr: 1 }}>
+                      {movie.title}
+                    </Typography>
+                    <IconButton
+                      size="small"
+                      onClick={() => removeMovie(movie.id)}
+                      sx={{ mt: -0.5, mr: -0.5 }}
+                    >
+                      <CloseIcon fontSize="small" />
+                    </IconButton>
+                  </Box>
+                  <Chip 
+                    label={`${movie.popularity} ratings`} 
+                    size="small" 
+                    color="primary" 
+                    variant="outlined"
+                    sx={{ mt: 1 }}
+                  />
+                </CardContent>
+              </Card>
+            ))}
+          </Box>
+        </Box>
+      )}
 
       <Button
         type="submit"
@@ -181,10 +253,33 @@ const MovieForm: React.FC<MovieFormProps> = ({ onRecommendations }) => {
         color="primary"
         fullWidth
         sx={{ mt: 2 }}
-        disabled={loading || selectedMovies.length !== 5 || selectedMovies.some(movie => !movie)}
+        disabled={loading || selectedMovies.length === 0 || selectedMovies.length > 15}
       >
         {loading ? <CircularProgress size={24} /> : 'Get Recommendations'}
       </Button>
+
+      {/* Warning Snackbars */}
+      <Snackbar
+        open={duplicateWarning}
+        autoHideDuration={3000}
+        onClose={() => setDuplicateWarning(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={() => setDuplicateWarning(false)} severity="warning">
+          This movie is already selected!
+        </Alert>
+      </Snackbar>
+
+      <Snackbar
+        open={limitWarning}
+        autoHideDuration={3000}
+        onClose={() => setLimitWarning(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={() => setLimitWarning(false)} severity="warning">
+          You can only select up to 15 movies!
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

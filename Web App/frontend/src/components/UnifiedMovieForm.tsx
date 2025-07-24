@@ -10,9 +10,11 @@ import {
   TextField,
   Chip,
   Card,
-  CardContent
+  CardContent,
+  Snackbar,
+  IconButton
 } from '@mui/material';
-import { TrendingUp, Star, Login, Logout } from '@mui/icons-material';
+import { TrendingUp, Star, Login, Logout, Close as CloseIcon } from '@mui/icons-material';
 import axios from 'axios';
 import { API_URLS } from '../config/api';
 
@@ -53,36 +55,37 @@ interface TrendingMovie {
 }
 
 const UnifiedMovieForm: React.FC<UnifiedMovieFormProps> = ({ onRecommendations }) => {
-  const { setValue, formState: { errors }, handleSubmit } = useForm<FormData>();
+  const { handleSubmit } = useForm<FormData>();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
   const [searchResults, setSearchResults] = useState<MovieOption[]>([]);
-  const [selectedMovies, setSelectedMovies] = useState<string[]>([]);
+  const [selectedMovies, setSelectedMovies] = useState<MovieOption[]>([]);
+  const [recentAndFavs, setRecentAndFavs] = useState<MovieOption[]>([]);
   const [trendingMovies, setTrendingMovies] = useState<TrendingMovie[]>([]);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [searchLoading, setSearchLoading] = useState(false);
-
+  const [duplicateWarning, setDuplicateWarning] = useState(false);
+  const [limitWarning, setLimitWarning] = useState(false);
 
   useEffect(() => {
-    // Check if user is authenticated for Trakt
     const storedSessionId = localStorage.getItem('trakt_session_id');
     if (storedSessionId) {
       setSessionId(storedSessionId);
       setIsAuthenticated(true);
     }
-
-    // Load trending movies for Trakt mode
-    loadTrendingMovies();
-
-    // Listen for authentication success message from popup
+    if (storedSessionId) {
+      fetchRecentAndFavs(storedSessionId);
+    }
+    fetchTrendingMovies();
+    
     const handleMessage = (event: MessageEvent) => {
       if (event.data.type === 'TRAKT_AUTH_SUCCESS') {
         setSessionId(event.data.sessionId);
         setIsAuthenticated(true);
         setError(null);
         setLoading(false);
+        fetchRecentAndFavs(event.data.sessionId);
       }
     };
 
@@ -90,20 +93,54 @@ const UnifiedMovieForm: React.FC<UnifiedMovieFormProps> = ({ onRecommendations }
     return () => window.removeEventListener('message', handleMessage);
   }, []);
 
-
-
-  const loadTrendingMovies = async () => {
+  const fetchRecentAndFavs = async (sessionId: string) => {
     try {
-      const response = await axios.get(API_URLS.TRAKT_TRENDING, {
-        params: { limit: 20 }
+      const response = await axios.get(API_URLS.TRAKT_USER_HISTORY, {
+        headers: { 'X-Session-ID': sessionId }
       });
-      setTrendingMovies(response.data.trending || []);
+      const movies: MovieOption[] = [];
+      const seen = new Set();
+      const arr: any[] = [
+        ...(response.data.favorite_movies || []),
+        ...(response.data.recently_watched_movies || [])
+      ];
+      for (const item of arr as any[]) {
+        const movie = item.movie || item.show;
+        if (movie && !seen.has(movie.title)) {
+          seen.add(movie.title);
+          movies.push({
+            title: movie.title,
+            year: movie.year,
+            type: item.movie ? 'movie' : 'show',
+            ids: movie.ids,
+            overview: movie.overview,
+            rating: movie.rating,
+            votes: movie.votes
+          });
+        }
+      }
+      setRecentAndFavs(movies);
     } catch (err) {
-      console.error('Error loading trending movies:', err);
+      console.error('Error fetching user history:', err);
     }
   };
 
-
+  const fetchTrendingMovies = async () => {
+    try {
+      const response = await axios.get(API_URLS.TRAKT_TRENDING, { params: { limit: 20 } });
+      setTrendingMovies((response.data.trending || []).map((item: any) => ({
+        title: item.title,
+        year: item.year,
+        ids: item.ids,
+        overview: item.overview,
+        rating: item.rating,
+        votes: item.votes,
+        watchers: item.watchers
+      })));
+    } catch (err) {
+      setTrendingMovies([]);
+    }
+  };
 
   const handleTraktAuth = async () => {
     try {
@@ -113,19 +150,17 @@ const UnifiedMovieForm: React.FC<UnifiedMovieFormProps> = ({ onRecommendations }
       const response = await axios.get(API_URLS.TRAKT_AUTH);
       const authUrl = response.data.auth_url;
       
-      // Open Trakt authorization in a new window
       const authWindow = window.open(authUrl, 'trakt_auth', 'width=600,height=700');
       
-      // Listen for the callback
       const checkAuth = setInterval(() => {
         if (authWindow?.closed) {
           clearInterval(checkAuth);
-          // Check if we have a session ID (this would be set by the callback)
           const storedSessionId = localStorage.getItem('trakt_session_id');
           if (storedSessionId) {
             setSessionId(storedSessionId);
             setIsAuthenticated(true);
             setError(null);
+            fetchRecentAndFavs(storedSessionId);
           } else {
             setError('Authentication was cancelled or failed');
           }
@@ -145,9 +180,10 @@ const UnifiedMovieForm: React.FC<UnifiedMovieFormProps> = ({ onRecommendations }
     setSessionId(null);
     setIsAuthenticated(false);
     setSelectedMovies([]);
+    setRecentAndFavs([]);
   };
 
-  const handleSearch = async (query: string) => {
+  const handleSearch = async (_: any, query: string) => {
     if (!query.trim()) {
       setSearchResults([]);
       return;
@@ -160,12 +196,57 @@ const UnifiedMovieForm: React.FC<UnifiedMovieFormProps> = ({ onRecommendations }
       });
       setSearchResults(response.data.results || []);
     } catch (err) {
-      console.error('Error searching:', err);
       setSearchResults([]);
     } finally {
       setSearchLoading(false);
     }
   };
+
+  const handleSelectMovie = (_: any, value: MovieOption | null) => {
+    if (!value) return;
+    if (selectedMovies.some(m => m.title === value.title)) {
+      setDuplicateWarning(true);
+      return;
+    }
+    if (selectedMovies.length >= 15) {
+      setLimitWarning(true);
+      return;
+    }
+    setSelectedMovies([...selectedMovies, value]);
+  };
+
+  const handleAddTrending = (movie: TrendingMovie) => {
+    if (selectedMovies.some(m => m.title === movie.title)) {
+      setDuplicateWarning(true);
+      return;
+    }
+    if (selectedMovies.length >= 15) {
+      setLimitWarning(true);
+      return;
+    }
+    setSelectedMovies([...selectedMovies, {
+      title: movie.title,
+      year: movie.year,
+      type: 'movie',
+      ids: movie.ids,
+      overview: movie.overview,
+      rating: movie.rating,
+      votes: movie.votes
+    }]);
+  };
+
+  const removeMovie = (title: string) => {
+    setSelectedMovies(selectedMovies.filter(m => m.title !== title));
+  };
+
+  const combinedOptions = [
+    ...recentAndFavs,
+    ...searchResults.filter(
+      sr => !recentAndFavs.some(rf => rf.title === sr.title)
+    )
+  ].filter(
+    option => !selectedMovies.some(m => m.title === option.title)
+  );
 
   const onSubmit = async () => {
     try {
@@ -177,57 +258,19 @@ const UnifiedMovieForm: React.FC<UnifiedMovieFormProps> = ({ onRecommendations }
         return;
       }
 
-      const endpoint = API_URLS.TRAKT_RECOMMEND;
-      const config = {
+      const response = await axios.post(API_URLS.TRAKT_RECOMMEND, {
+        movies: selectedMovies.map(m => m.title)
+      }, {
         headers: { 'X-Session-ID': sessionId }
-      };
-
-      const response = await axios.post(endpoint, {
-        movies: selectedMovies
-      }, config);
+      });
       
       onRecommendations(response.data.recommendations);
       setSelectedMovies([]);
     } catch (err) {
-      if (axios.isAxiosError(err) && err.response?.status === 401) {
-        setError('Authentication expired. Please log in again.');
-        handleLogout();
-      } else {
-        setError('Failed to get recommendations. Please try again.');
-      }
-      console.error(err);
+      setError('Failed to get recommendations. Please try again.');
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleMovieChange = (index: number, value: MovieOption | null) => {
-    try {
-      const newSelectedMovies = [...selectedMovies];
-      newSelectedMovies[index] = value ? value.title : '';
-      setSelectedMovies(newSelectedMovies);
-      setValue(`movies.${index}`, value ? value.title : '');
-    } catch (err) {
-      console.error('Error in handleMovieChange:', err);
-    }
-  };
-
-  const addFromTrending = (movie: TrendingMovie) => {
-    const emptyIndex = selectedMovies.findIndex(movie => !movie);
-    if (emptyIndex !== -1) {
-      const newSelectedMovies = [...selectedMovies];
-      newSelectedMovies[emptyIndex] = movie.title;
-      setSelectedMovies(newSelectedMovies);
-      setValue(`movies.${emptyIndex}`, movie.title);
-    }
-  };
-
-  const getCurrentOptions = () => {
-    return searchResults;
-  };
-
-  const getOptionLabel = (option: MovieOption) => {
-    return `${option.title}${option.year ? ` (${option.year})` : ''}`;
   };
 
   return (
@@ -237,32 +280,32 @@ const UnifiedMovieForm: React.FC<UnifiedMovieFormProps> = ({ onRecommendations }
       </Typography>
 
       {/* Trakt Authentication */}
-        <Card sx={{ mb: 3 }}>
-          <CardContent>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Box>
-                <Typography variant="h6" gutterBottom>
-                  Trakt Authentication
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {isAuthenticated 
-                    ? 'Connected to Trakt - Get personalized recommendations!' 
-                    : 'Connect your Trakt account to get personalized recommendations based on your watch history and ratings.'
-                  }
-                </Typography>
-              </Box>
-              <Button
-                variant={isAuthenticated ? "outlined" : "contained"}
-                color={isAuthenticated ? "error" : "primary"}
-                startIcon={isAuthenticated ? <Logout /> : <Login />}
-                onClick={isAuthenticated ? handleLogout : handleTraktAuth}
-                disabled={loading}
-              >
-                {isAuthenticated ? 'Disconnect' : 'Connect Trakt'}
-              </Button>
+      <Card sx={{ mb: 3 }}>
+        <CardContent>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Box>
+              <Typography variant="h6" gutterBottom>
+                Trakt Authentication
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {isAuthenticated 
+                  ? 'Connected to Trakt - Get personalized recommendations!' 
+                  : 'Connect your Trakt account to get personalized recommendations based on your watch history and ratings.'
+                }
+              </Typography>
             </Box>
-          </CardContent>
-        </Card>
+            <Button
+              variant={isAuthenticated ? "outlined" : "contained"}
+              color={isAuthenticated ? "error" : "primary"}
+              startIcon={isAuthenticated ? <Logout /> : <Login />}
+              onClick={isAuthenticated ? handleLogout : handleTraktAuth}
+              disabled={loading}
+            >
+              {isAuthenticated ? 'Disconnect' : 'Connect Trakt'}
+            </Button>
+          </Box>
+        </CardContent>
+      </Card>
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
@@ -274,123 +317,71 @@ const UnifiedMovieForm: React.FC<UnifiedMovieFormProps> = ({ onRecommendations }
       <Card sx={{ mb: 3 }}>
         <CardContent>
           <Typography variant="h6" gutterBottom>
-            Enter 5 Movies You Like
+            Add Movies You Like (1–15)
           </Typography>
           
-          {[...Array(5)].map((_, index) => (
-            <Autocomplete
-              key={index}
-              options={getCurrentOptions()}
-              getOptionLabel={getOptionLabel}
-              value={getCurrentOptions().find(option => option.title === selectedMovies[index]) || null}
-              onChange={(_, newValue) => handleMovieChange(index, newValue)}
-              onInputChange={(_, newInputValue) => {
-                if (newInputValue.length > 2) {
-                  handleSearch(newInputValue);
-                }
-              }}
-              loading={searchLoading}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label={`Movie ${index + 1}`}
-                  variant="outlined"
-                  margin="normal"
-                  error={!!errors.movies?.[index]}
-                  helperText={errors.movies?.[index]?.message}
-                  required
-                  InputProps={{
-                    ...params.InputProps,
-                    endAdornment: (
-                      <>
-                        {searchLoading ? <CircularProgress color="inherit" size={20} /> : null}
-                        {params.InputProps.endAdornment}
-                      </>
-                    ),
-                  }}
-                />
-              )}
-              renderOption={(props, option) => (
-                <li {...props}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
-                    <Box>
-                      <Typography variant="body1">{option.title}</Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {option.year} • {option.type} • {option.overview?.substring(0, 100)}...
-                      </Typography>
-                    </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      {option.rating && (
-                        <Chip 
-                          icon={<Star />}
-                          label={`${option.rating.toFixed(1)}`} 
-                          size="small" 
-                          color="primary" 
-                          variant="outlined"
-                        />
-                      )}
-                      {option.type && (
-                        <Chip 
-                          label={option.type} 
-                          size="small" 
-                          color="secondary" 
-                          variant="outlined"
-                        />
-                      )}
-                    </Box>
-                  </Box>
-                </li>
-              )}
-              sx={{ mb: 2 }}
-            />
-          ))}
+          <Autocomplete
+            options={combinedOptions}
+            getOptionLabel={option => `${option.title}${option.year ? ` (${option.year})` : ''}`}
+            onInputChange={handleSearch}
+            onChange={handleSelectMovie}
+            loading={searchLoading}
+            renderInput={params => (
+              <TextField
+                {...params}
+                label="Search or select a movie/show"
+                variant="outlined"
+                margin="normal"
+                InputProps={{
+                  ...params.InputProps,
+                  endAdornment: (
+                    <>
+                      {searchLoading ? <CircularProgress color="inherit" size={20} /> : null}
+                      {params.InputProps.endAdornment}
+                    </>
+                  ),
+                }}
+              />
+            )}
+            renderOption={(props, option) => (
+              <li {...props}>
+                <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                  <Typography variant="body1">{option.title}</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {option.year} • {option.type} {option.overview ? `• ${option.overview.substring(0, 60)}...` : ''}
+                  </Typography>
+                </Box>
+              </li>
+            )}
+            sx={{ mb: 2 }}
+          />
 
-          <Button
-            type="submit"
-            variant="contained"
-            color="primary"
-            fullWidth
-            sx={{ mt: 2 }}
-            disabled={loading || !isAuthenticated || selectedMovies.length !== 5 || selectedMovies.some(movie => !movie)}
-            onClick={handleSubmit(onSubmit)}
-          >
-            {loading ? <CircularProgress size={24} /> : 'Get Recommendations'}
-          </Button>
-        </CardContent>
-      </Card>
-
-      {/* Trending Movies Section */}
-        <Card>
-          <CardContent>
+          {/* Trending Movies Section */}
+          <Box sx={{ mb: 2 }}>
             <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <TrendingUp />
-              Trending Movies
+              <TrendingUp /> Trending Movies
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
               Click on a trending movie to add it to your selection
             </Typography>
-            
-            <Box sx={{ 
-              display: 'grid', 
+            <Box sx={{
+              display: 'grid',
               gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' },
-              gap: 2 
+              gap: 2
             }}>
               {trendingMovies.slice(0, 10).map((movie, index) => (
-                <Card 
+                <Card
                   key={index}
-                  variant="outlined" 
-                  sx={{ 
-                    cursor: 'pointer',
-                    '&:hover': { backgroundColor: 'action.hover' }
-                  }}
-                  onClick={() => addFromTrending(movie)}
+                  variant="outlined"
+                  sx={{ cursor: 'pointer', '&:hover': { backgroundColor: 'action.hover' } }}
+                  onClick={() => handleAddTrending(movie)}
                 >
                   <CardContent sx={{ p: 2 }}>
                     <Typography variant="subtitle2" noWrap>
                       {movie.title}
                     </Typography>
                     <Typography variant="body2" color="text.secondary" noWrap>
-                      {movie.year} • {movie.watchers} watching
+                      {movie.year}
                     </Typography>
                     {movie.rating && (
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 1 }}>
@@ -404,8 +395,62 @@ const UnifiedMovieForm: React.FC<UnifiedMovieFormProps> = ({ onRecommendations }
                 </Card>
               ))}
             </Box>
-          </CardContent>
-        </Card>
+          </Box>
+
+          {/* Selected Movie Cards */}
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 2 }}>
+            {selectedMovies.map(movie => (
+              <Card key={movie.title} sx={{ minWidth: 200, position: 'relative' }}>
+                <CardContent>
+                  <Typography variant="subtitle1">{movie.title}</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {movie.year} • {movie.type}
+                  </Typography>
+                  <IconButton
+                    aria-label="remove"
+                    onClick={() => removeMovie(movie.title)}
+                    sx={{ position: 'absolute', top: 0, right: 0 }}
+                  >
+                    <CloseIcon />
+                  </IconButton>
+                </CardContent>
+              </Card>
+            ))}
+          </Box>
+
+          <Snackbar
+            open={duplicateWarning}
+            autoHideDuration={3000}
+            onClose={() => setDuplicateWarning(false)}
+            message="This movie is already selected."
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+          />
+          <Snackbar
+            open={limitWarning}
+            autoHideDuration={3000}
+            onClose={() => setLimitWarning(false)}
+            message="Maximum 15 movies allowed."
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+          />
+
+          <Button
+            type="submit"
+            variant="contained"
+            color="primary"
+            fullWidth
+            sx={{ mt: 2 }}
+            disabled={
+              loading ||
+              !isAuthenticated ||
+              selectedMovies.length < 1 ||
+              selectedMovies.length > 15
+            }
+            onClick={handleSubmit(onSubmit)}
+          >
+            {loading ? <CircularProgress size={24} /> : 'Get Recommendations'}
+          </Button>
+        </CardContent>
+      </Card>
     </Box>
   );
 };
