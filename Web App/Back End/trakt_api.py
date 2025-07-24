@@ -13,8 +13,16 @@ class TraktAPI:
     def __init__(self):
         self.client_id = os.getenv('TRAKT_CLIENT_ID')
         self.client_secret = os.getenv('TRAKT_CLIENT_SECRET')
-        self.redirect_uri = os.getenv('TRAKT_REDIRECT_URI', 'http://localhost:8000/auth/callback')
+        
+        # Try to get redirect URI from environment, fallback to EC2 domain
+        self.redirect_uri = os.getenv('TRAKT_REDIRECT_URI')
+        if not self.redirect_uri:
+            # Default to EC2 domain if not set
+            self.redirect_uri = 'https://api.ishaanpaul.com/auth/callback'
+        
         self.base_url = 'https://api.trakt.tv'
+        
+        print(f"Trakt API initialized with redirect_uri: {self.redirect_uri}")
         
         if not self.client_id or not self.client_secret:
             raise ValueError("TRAKT_CLIENT_ID and TRAKT_CLIENT_SECRET must be set in environment variables")

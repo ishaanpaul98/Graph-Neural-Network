@@ -11,6 +11,8 @@ from NN.mpgnn import MPGNN
 from Dataset.download_movielens import MovieLensDownloader
 from trakt_api import trakt_api
 from session_manager import session_manager
+import time
+import threading
 
 # Load environment variables from .env file
 load_dotenv()
@@ -239,16 +241,40 @@ def get_available_movies():
 
 # Trakt API Integration Endpoints
 
+# Thread-safe temporary storage for OAuth state (in production, use Redis or database)
+oauth_states = {}
+oauth_states_lock = threading.Lock()
+
+def cleanup_expired_states():
+    """Clean up expired OAuth states"""
+    with oauth_states_lock:
+        current_time = time.time()
+        expired_states = [s for s, data in oauth_states.items() if current_time - data['timestamp'] > 600]
+        for expired_state in expired_states:
+            del oauth_states[expired_state]
+        if expired_states:
+            print(f"Cleaned up {len(expired_states)} expired OAuth states")
+
 @app.route('/auth/trakt', methods=['GET'])
 def trakt_auth():
     """Redirect user to Trakt OAuth authorization"""
     try:
         # Generate a unique state parameter for security
         state = secrets.token_urlsafe(32)
-        session['oauth_state'] = state
+        
+        # Store state with timestamp for cleanup (thread-safe)
+        with oauth_states_lock:
+            oauth_states[state] = {
+                'timestamp': time.time(),
+                'origin': request.headers.get('Origin', 'http://localhost:5173')
+            }
+        
+        # Clean up expired states
+        cleanup_expired_states()
         
         # Get authorization URL
         auth_url = trakt_api.get_authorization_url(state)
+        print(f"Generated OAuth state: {state} for origin: {request.headers.get('Origin')}")
         return jsonify({'auth_url': auth_url})
     except Exception as e:
         print(f"Error in trakt_auth: {str(e)}")
@@ -260,10 +286,22 @@ def trakt_callback():
     try:
         code = request.args.get('code')
         state = request.args.get('state')
+        print(f"Callback received - Code: {code}, State: {state}")
+        print(f"Origin: {request.headers.get('Origin')}")
         
-        # Verify state parameter
-        if state != session.get('oauth_state'):
-            return jsonify({'error': 'Invalid state parameter'}), 400
+        # Verify state parameter (thread-safe)
+        with oauth_states_lock:
+            if state not in oauth_states:
+                print(f"State {state} not found in oauth_states")
+                print(f"Available states: {list(oauth_states.keys())}")
+                return jsonify({'error': 'Invalid state parameter'}), 400
+            
+            # Get the stored state data
+            state_data = oauth_states[state]
+            origin = state_data['origin']
+            
+            # Clean up the used state
+            del oauth_states[state]
         
         if not code:
             return jsonify({'error': 'No authorization code received'}), 400
@@ -283,11 +321,14 @@ def trakt_callback():
         if not success:
             return jsonify({'error': 'Failed to create session'}), 500
         
-        # Store session ID in Flask session
-        session['trakt_session_id'] = session_id
-        
         # Redirect to frontend with success and session ID
-        return redirect(f'https://main.d2p9ieiqdwymip.amplifyapp.com/auth-success?session_id={session_id}')
+        if origin == "https://main.d2p9ieiqdwymip.amplifyapp.com":
+            return redirect(f'https://main.d2p9ieiqdwymip.amplifyapp.com/auth-success?session_id={session_id}')
+        elif origin == "https://dev.d2p9ieiqdwymip.amplifyapp.com":
+            return redirect(f'https://dev.d2p9ieiqdwymip.amplifyapp.com/auth-success?session_id={session_id}')
+        else:
+            # Default redirect for localhost development
+            return redirect(f'http://localhost:5173/auth-success?session_id={session_id}')
         
     except Exception as e:
         print(f"Error in trakt_callback: {str(e)}")
