@@ -66,6 +66,7 @@ const TraktMovieForm: React.FC<TraktMovieFormProps> = ({ onRecommendations }) =>
   const [searchLoading, setSearchLoading] = useState(false);
   const [duplicateWarning, setDuplicateWarning] = useState(false);
   const [limitWarning, setLimitWarning] = useState(false);
+  const [trendingMovies, setTrendingMovies] = useState<MovieOption[]>([]);
 
   useEffect(() => {
     const storedSessionId = localStorage.getItem('trakt_session_id');
@@ -76,6 +77,7 @@ const TraktMovieForm: React.FC<TraktMovieFormProps> = ({ onRecommendations }) =>
     if (storedSessionId) {
       fetchRecentAndFavs(storedSessionId);
     }
+    fetchTrendingMovies();
     // Listen for authentication success message from popup
     const handleMessage = (event: MessageEvent) => {
       if (event.data.type === 'TRAKT_AUTH_SUCCESS') {
@@ -101,7 +103,7 @@ const TraktMovieForm: React.FC<TraktMovieFormProps> = ({ onRecommendations }) =>
       [
         ...(response.data.favorite_movies || []),
         ...(response.data.recently_watched_movies || [])
-      ].forEach(item => {
+      ].forEach((item: any) => {
         const movie = item.movie || item.show;
         if (movie && !seen.has(movie.title)) {
           seen.add(movie.title);
@@ -119,6 +121,23 @@ const TraktMovieForm: React.FC<TraktMovieFormProps> = ({ onRecommendations }) =>
       setRecentAndFavs(movies);
     } catch (err) {
       console.error('Error fetching user history:', err);
+    }
+  };
+
+  const fetchTrendingMovies = async () => {
+    try {
+      const response = await axios.get(API_URLS.TRAKT_TRENDING, { params: { limit: 20 } });
+      setTrendingMovies((response.data.trending || []).map(item => ({
+        title: item.title,
+        year: item.year,
+        type: 'movie',
+        ids: item.ids,
+        overview: item.overview,
+        rating: item.rating,
+        votes: item.votes
+      })));
+    } catch (err) {
+      setTrendingMovies([]);
     }
   };
 
@@ -188,6 +207,18 @@ const TraktMovieForm: React.FC<TraktMovieFormProps> = ({ onRecommendations }) =>
       return;
     }
     setSelectedMovies([...selectedMovies, value]);
+  };
+
+  const handleAddTrending = (movie: MovieOption) => {
+    if (selectedMovies.some(m => m.title === movie.title)) {
+      setDuplicateWarning(true);
+      return;
+    }
+    if (selectedMovies.length >= 15) {
+      setLimitWarning(true);
+      return;
+    }
+    setSelectedMovies([...selectedMovies, movie]);
   };
 
   const removeMovie = (title: string) => {
@@ -304,6 +335,47 @@ const TraktMovieForm: React.FC<TraktMovieFormProps> = ({ onRecommendations }) =>
             )}
             sx={{ mb: 2 }}
           />
+          {/* Trending Movies Section */}
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <TrendingUp /> Trending Movies
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              Click on a trending movie to add it to your selection
+            </Typography>
+            <Box sx={{
+              display: 'grid',
+              gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' },
+              gap: 2
+            }}>
+              {trendingMovies.slice(0, 10).map((movie, index) => (
+                <Card
+                  key={index}
+                  variant="outlined"
+                  sx={{ cursor: 'pointer', '&:hover': { backgroundColor: 'action.hover' } }}
+                  onClick={() => handleAddTrending(movie)}
+                >
+                  <CardContent sx={{ p: 2 }}>
+                    <Typography variant="subtitle2" noWrap>
+                      {movie.title}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" noWrap>
+                      {movie.year}
+                    </Typography>
+                    {movie.rating && (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 1 }}>
+                        <Star sx={{ fontSize: 16, color: 'warning.main' }} />
+                        <Typography variant="body2">
+                          {movie.rating.toFixed(1)}
+                        </Typography>
+                      </Box>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </Box>
+          </Box>
+          {/* Selected Movie Cards */}
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 2 }}>
             {selectedMovies.map(movie => (
               <Card key={movie.title} sx={{ minWidth: 200, position: 'relative' }}>
