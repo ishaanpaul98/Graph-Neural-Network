@@ -14,6 +14,7 @@ export const API_CONFIG = {
     TRAKT_RECOMMEND: '/api/trakt/recommend',
     TRAKT_TRENDING: '/api/trakt/trending',
     TRAKT_POPULAR: '/api/trakt/popular',
+    TRAKT_USER_HISTORY: '/api/trakt/user-history',
   }
 };
 
@@ -34,5 +35,5 @@ export const API_URLS = {
   TRAKT_RECOMMEND: buildApiUrl(API_CONFIG.ENDPOINTS.TRAKT_RECOMMEND),
   TRAKT_TRENDING: buildApiUrl(API_CONFIG.ENDPOINTS.TRAKT_TRENDING),
   TRAKT_POPULAR: buildApiUrl(API_CONFIG.ENDPOINTS.TRAKT_POPULAR),
-  TRAKT_USER_HISTORY: '/api/trakt/user-history',
+  TRAKT_USER_HISTORY: buildApiUrl(API_CONFIG.ENDPOINTS.TRAKT_USER_HISTORY),
 }; 

@@ -258,16 +258,31 @@ const UnifiedMovieForm: React.FC<UnifiedMovieFormProps> = ({ onRecommendations }
         return;
       }
 
+      console.log('Submitting movies:', selectedMovies.map(m => m.title));
+      console.log('Session ID:', sessionId);
+      console.log('API URL:', API_URLS.TRAKT_RECOMMEND);
+
       const response = await axios.post(API_URLS.TRAKT_RECOMMEND, {
         movies: selectedMovies.map(m => m.title)
       }, {
         headers: { 'X-Session-ID': sessionId }
       });
       
+      console.log('Recommendation response:', response.data);
       onRecommendations(response.data.recommendations);
       setSelectedMovies([]);
-    } catch (err) {
-      setError('Failed to get recommendations. Please try again.');
+    } catch (err: any) {
+      console.error('Recommendation error:', err);
+      if (err.response) {
+        console.error('Error response:', err.response.data);
+        setError(`Failed to get recommendations: ${err.response.data.error || err.response.statusText}`);
+      } else if (err.request) {
+        console.error('No response received:', err.request);
+        setError('No response from server. Please check your connection.');
+      } else {
+        console.error('Error setting up request:', err.message);
+        setError(`Failed to get recommendations: ${err.message}`);
+      }
     } finally {
       setLoading(false);
     }
