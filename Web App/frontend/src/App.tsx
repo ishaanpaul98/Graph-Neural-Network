@@ -12,7 +12,32 @@ const theme = createTheme({
       main: '#1976d2',
     },
     background: {
-      default: '#f5f5f5',
+      default: 'transparent',
+      paper: 'rgba(255, 255, 255, 0.9)',
+    },
+    text: {
+      primary: '#1a1a1a',
+      secondary: '#666666',
+    },
+  },
+  components: {
+    MuiCard: {
+      styleOverrides: {
+        root: {
+          backdropFilter: 'blur(10px)',
+          backgroundColor: 'rgba(255, 255, 255, 0.9)',
+          border: '1px solid rgba(255, 255, 255, 0.2)',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+        },
+      },
+    },
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          backdropFilter: 'blur(10px)',
+          backgroundColor: 'rgba(255, 255, 255, 0.9)',
+        },
+      },
     },
   },
 })

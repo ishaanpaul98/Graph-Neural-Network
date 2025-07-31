@@ -290,12 +290,44 @@ const UnifiedMovieForm: React.FC<UnifiedMovieFormProps> = ({ onRecommendations }
 
   return (
     <Box sx={{ maxWidth: 800, mx: 'auto', p: 3 }}>
-      <Typography variant="h4" gutterBottom align="center">
-        Movie Recommendations
+      <Typography 
+        variant="h3" 
+        gutterBottom 
+        align="center" 
+        sx={{ 
+          fontWeight: 'bold',
+          background: 'linear-gradient(45deg, #1e3c72, #2a5298, #4facfe)',
+          backgroundClip: 'text',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          textShadow: '0 2px 4px rgba(0,0,0,0.1)',
+          mb: 3
+        }}
+      >
+        🎬 Lights, Camera, Recommendations! 🍿
+      </Typography>
+      <Typography 
+        variant="h6" 
+        align="center" 
+        sx={{ 
+          color: 'text.secondary',
+          mb: 4,
+          fontStyle: 'italic',
+          fontWeight: 300
+        }}
+      >
+        Share your favorite movies and let our AI discover your next cinematic adventure! ✨
       </Typography>
 
       {/* Trakt Authentication */}
-      <Card sx={{ mb: 3 }}>
+      <Card sx={{ 
+        mb: 3, 
+        borderRadius: 3,
+        border: '1px solid rgba(255, 255, 255, 0.2)',
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+        backdropFilter: 'blur(10px)',
+        backgroundColor: 'rgba(255, 255, 255, 0.9)'
+      }}>
         <CardContent>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <Box>
@@ -329,7 +361,14 @@ const UnifiedMovieForm: React.FC<UnifiedMovieFormProps> = ({ onRecommendations }
       )}
 
       {/* Movie Selection Form */}
-      <Card sx={{ mb: 3 }}>
+      <Card sx={{ 
+        mb: 3, 
+        borderRadius: 3,
+        border: '1px solid rgba(255, 255, 255, 0.2)',
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+        backdropFilter: 'blur(10px)',
+        backgroundColor: 'rgba(255, 255, 255, 0.9)'
+      }}>
         <CardContent>
           <Typography variant="h6" gutterBottom>
             Add Movies You Like (1–15)
@@ -388,7 +427,19 @@ const UnifiedMovieForm: React.FC<UnifiedMovieFormProps> = ({ onRecommendations }
                 <Card
                   key={index}
                   variant="outlined"
-                  sx={{ cursor: 'pointer', '&:hover': { backgroundColor: 'action.hover' } }}
+                  sx={{ 
+                    cursor: 'pointer', 
+                    borderRadius: 2,
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    backdropFilter: 'blur(10px)',
+                    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                    transition: 'all 0.3s ease',
+                    '&:hover': { 
+                      backgroundColor: 'rgba(25, 118, 210, 0.1)',
+                      transform: 'translateY(-4px)',
+                      boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15)'
+                    } 
+                  }}
                   onClick={() => handleAddTrending(movie)}
                 >
                   <CardContent sx={{ p: 2 }}>
@@ -415,7 +466,19 @@ const UnifiedMovieForm: React.FC<UnifiedMovieFormProps> = ({ onRecommendations }
           {/* Selected Movie Cards */}
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 2 }}>
             {selectedMovies.map(movie => (
-              <Card key={movie.title} sx={{ minWidth: 200, position: 'relative' }}>
+              <Card key={movie.title} sx={{ 
+                minWidth: 200, 
+                position: 'relative',
+                borderRadius: 2,
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                backdropFilter: 'blur(10px)',
+                backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                transition: 'all 0.3s ease',
+                '&:hover': {
+                  transform: 'translateY(-2px)',
+                  boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)'
+                }
+              }}>
                 <CardContent>
                   <Typography variant="subtitle1">{movie.title}</Typography>
                   <Typography variant="body2" color="text.secondary">

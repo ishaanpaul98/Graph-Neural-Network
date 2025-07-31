@@ -125,20 +125,24 @@ def prepare_model_input(movie_ids: List[int]) -> tuple:
     """
     Prepare input tensors for the model
     """
-    # Create a dummy user (we'll use index 0)
-    user_idx = 0
-    
-        # Create user features (16-dimensional random features)
+    # Create user features (16-dimensional random features)
     user_features = torch.randn(1, 16)  # Single user with 16 features
     
     # Create movie features (16-dimensional random features for all movies)
     movie_features = torch.randn(num_movies, 16)
     
-    # Create edge indices for input movies
-    edge_index = torch.tensor([
-        [user_idx] * len(movie_ids),  # Source nodes (user)
-        [movie_mapping[movie_id] for movie_id in movie_ids]  # Target nodes (movies)
-    ], dtype=torch.long)
+    # Create edge indices for input movies (user -> movie edges)
+    edge_indices = []
+    for movie_id in movie_ids:
+        if movie_id in movie_mapping:
+            movie_idx = movie_mapping[movie_id]
+            edge_indices.append([0, movie_idx])  # user_idx=0, movie_idx
+    
+    if not edge_indices:
+        # Fallback: create edges to first few movies
+        edge_indices = [[0, i] for i in range(min(3, num_movies))]
+    
+    edge_index = torch.tensor(edge_indices, dtype=torch.long).t()
     
     return user_features, movie_features, edge_index
 
@@ -379,74 +383,198 @@ def trakt_recommend():
         
         # First, try to get Trakt recommendations
         try:
+            print(f"\nGetting Trakt recommendations...")
+            print(f"Access token: {access_token[:20]}..." if access_token else "No access token")
             trakt_recommendations = trakt_api.get_movie_recommendations(access_token, 10)
-            trakt_titles = [movie['title'] for movie in trakt_recommendations]
+            print(f"Trakt API response: {trakt_recommendations}")
+            
+            # Handle empty or invalid response
+            if not trakt_recommendations or not isinstance(trakt_recommendations, list):
+                print("Empty or invalid Trakt response, using empty list")
+                trakt_titles = []
+            else:
+                trakt_titles = []
+                for movie in trakt_recommendations:
+                    if isinstance(movie, dict) and 'title' in movie:
+                        trakt_titles.append(movie['title'])
+                    else:
+                        print(f"Skipping invalid movie entry: {movie}")
+                
+            print(f"Trakt titles: {trakt_titles}")
         except Exception as e:
             print(f"Error getting Trakt recommendations: {e}")
+            print(f"Error type: {type(e)}")
+            import traceback
+            print(f"Traceback: {traceback.format_exc()}")
             trakt_titles = []
+            
+        # If Trakt recommendations failed, try trending movies as fallback
+        if not trakt_titles:
+            try:
+                print("Trakt recommendations failed, trying trending movies as fallback...")
+                trending_movies = trakt_api.get_trending_movies(10)
+                trakt_titles = [movie['title'] for movie in trending_movies if isinstance(movie, dict) and 'title' in movie]
+                print(f"Fallback trending titles: {trakt_titles}")
+            except Exception as e:
+                print(f"Error getting trending movies fallback: {e}")
+                trakt_titles = []
         
-        # Then get GNN recommendations
+                # Then get GNN recommendations
         try:
             # Convert movie titles to IDs for GNN model
             movie_ids = []
-            for movie_title in user_movies:
-                if movie_title not in movie_title_to_id:
-                    # Try to find similar movie in our dataset
-                    similar_movie = None
-                    for title, movie_id in movie_title_to_id.items():
-                        if movie_title.lower() in title.lower() or title.lower() in movie_title.lower():
-                            similar_movie = movie_id
-                            break
-                    
-                    if similar_movie:
-                        movie_ids.append(similar_movie)
+            print(f"\nProcessing movies: {user_movies}")
+            print(f"Available movies in dataset: {len(movie_title_to_id)}")
+            print(f"Sample movies in dataset: {list(movie_title_to_id.keys())[:5]}")
+            print(f"Movie title to ID mapping sample: {dict(list(movie_title_to_id.items())[:3])}")
+            print(f"Movie mapping reverse sample: {dict(list(movie_mapping_reverse.items())[:3])}")
+            print(f"Movie ID to title sample: {dict(list(movie_id_to_title.items())[:3])}")
+            
+            # Check if we have a proper movie dataset
+            if len(movie_title_to_id) < 100:  # Small dataset indicates test data
+                print("Warning: Small dataset detected. Using Trakt recommendations only.")
+                gnn_recommendations = []
+            else:
+                for movie_title in user_movies:
+                    print(f"\nLooking for: {movie_title}")
+                    if movie_title not in movie_title_to_id:
+                        print(f"  Not found exactly, searching for similar...")
+                        # Try to find similar movie in our dataset
+                        similar_movie = None
+                        for title, movie_id in movie_title_to_id.items():
+                            if movie_title.lower() in title.lower() or title.lower() in movie_title.lower():
+                                similar_movie = movie_id
+                                print(f"  Found similar: {title} -> {movie_id}")
+                                break
+                        
+                        if similar_movie:
+                            movie_ids.append(similar_movie)
+                            print(f"  Added similar movie ID: {similar_movie}")
+                        else:
+                            # Use a random movie from dataset instead of always the same one
+                            import random
+                            available_ids = list(movie_title_to_id.values())
+                            random_movie = random.choice(available_ids)
+                            print(f"  No similar found, using random: {random_movie}")
+                            movie_ids.append(random_movie)
                     else:
-                        # Use a default movie if not found
-                        movie_ids.append(list(movie_title_to_id.values())[0])
-                else:
-                    movie_ids.append(movie_title_to_id[movie_title])
-            
-            # Get GNN predictions
-            user_features, movie_features, edge_index = prepare_model_input(movie_ids)
-            
-            with torch.no_grad():
-                all_movie_indices = torch.arange(num_movies)
-                all_edge_index = torch.tensor([
-                    [0] * num_movies,
-                    all_movie_indices
-                ], dtype=torch.long)
+                        movie_id = movie_title_to_id[movie_title]
+                        print(f"  Found exact match: {movie_title} -> {movie_id}")
+                        movie_ids.append(movie_id)
+                        print(f"  Added exact movie ID: {movie_id}")
                 
-                predictions = model.predict(
-                    user_features.unsqueeze(0),
-                    movie_features,
-                    all_edge_index
-                )
+                print(f"Final movie IDs: {movie_ids}")
                 
-                top_10_indices = predictions.squeeze().topk(10).indices.tolist()
-                gnn_recommendations = [movie_id_to_title[movie_mapping_reverse[idx]] for idx in top_10_indices]
+                # Check if movie IDs are in the mapping
+                valid_movie_ids = []
+                for movie_id in movie_ids:
+                    if movie_id in movie_mapping:
+                        valid_movie_ids.append(movie_id)
+                        print(f"  Valid movie ID: {movie_id} -> mapping index: {movie_mapping[movie_id]}")
+                    else:
+                        print(f"  Invalid movie ID: {movie_id} not in movie_mapping")
+                
+                if not valid_movie_ids:
+                    print("No valid movie IDs found, using first few movies from dataset")
+                    valid_movie_ids = list(movie_title_to_id.values())[:3]
+                
+                movie_ids = valid_movie_ids
+                
+                # Ensure we have unique movie IDs to avoid tensor dimension issues
+                unique_movie_ids = list(set(movie_ids))
+                if len(unique_movie_ids) < len(movie_ids):
+                    print(f"Removed duplicates: {movie_ids} -> {unique_movie_ids}")
+                    movie_ids = unique_movie_ids
+                
+                # Get GNN predictions
+                user_features, movie_features, edge_index = prepare_model_input(movie_ids)
+                
+                with torch.no_grad():
+                    # Create edge indices for all possible movie recommendations (user -> all movies)
+                    all_edge_indices = []
+                    for movie_idx in range(num_movies):
+                        all_edge_indices.append([0, movie_idx])  # user_idx=0, movie_idx
+                    
+                    all_edge_index = torch.tensor(all_edge_indices, dtype=torch.long).t()
+                    
+                    print(f"User features shape: {user_features.shape}")
+                    print(f"Movie features shape: {movie_features.shape}")
+                    print(f"All edge index shape: {all_edge_index.shape}")
+                    
+                    predictions = model.predict(
+                        user_features,
+                        movie_features,
+                        all_edge_index
+                    )
+                    
+                    print(f"Predictions shape: {predictions.shape}")
+                    print(f"Predictions: {predictions.squeeze()[:10]}")  # Show first 10 predictions
+                    
+                    # Get top 10 recommendations
+                    top_10_indices = predictions.squeeze().topk(10).indices.tolist()
+                    print(f"Top 10 indices: {top_10_indices}")
+                    
+                    gnn_recommendations = []
+                    for idx in top_10_indices:
+                        if idx in movie_mapping_reverse:
+                            movie_id = movie_mapping_reverse[idx]
+                            if movie_id in movie_id_to_title:
+                                gnn_recommendations.append(movie_id_to_title[movie_id])
+                            else:
+                                print(f"Warning: Movie ID {movie_id} not found in movie_id_to_title")
+                        else:
+                            print(f"Warning: Index {idx} not found in movie_mapping_reverse")
                 
         except Exception as e:
             print(f"Error getting GNN recommendations: {e}")
+            print(f"Error type: {type(e)}")
+            import traceback
+            print(f"Traceback: {traceback.format_exc()}")
             gnn_recommendations = []
         
-        # Combine recommendations (Trakt first, then GNN)
+        # Combine recommendations (GNN first, then Trakt)
         combined_recommendations = []
         
-        # Add Trakt recommendations
-        for title in trakt_titles:
-            if title not in combined_recommendations:
-                combined_recommendations.append(title)
+        # Create a set of input movies for filtering (case-insensitive)
+        input_movies_set = {movie.lower() for movie in user_movies}
         
-        # Add GNN recommendations
+        # Add GNN recommendations first (prioritize our trained model)
         for title in gnn_recommendations:
-            if title not in combined_recommendations and len(combined_recommendations) < 15:
+            # Skip if already in combined list or if it's one of the input movies
+            if (title not in combined_recommendations and 
+                title.lower() not in input_movies_set and
+                len(combined_recommendations) < 15):
                 combined_recommendations.append(title)
         
-        return jsonify({
+        # Add Trakt recommendations as backup
+        for title in trakt_titles:
+            # Skip if already in combined list or if it's one of the input movies
+            if (title not in combined_recommendations and 
+                title.lower() not in input_movies_set and
+                len(combined_recommendations) < 15):
+                combined_recommendations.append(title)
+        
+        print(f"\nFinal response:")
+        print(f"  Input movies: {user_movies}")
+        print(f"  Trakt recommendations: {len(trakt_titles)}")
+        print(f"  GNN recommendations: {len(gnn_recommendations)}")
+        print(f"  Combined recommendations: {len(combined_recommendations)}")
+        print(f"  Combined list: {combined_recommendations}")
+        
+        # Log any filtered recommendations
+        filtered_gnn = [title for title in gnn_recommendations if title.lower() in input_movies_set]
+        filtered_trakt = [title for title in trakt_titles if title.lower() in input_movies_set]
+        if filtered_gnn or filtered_trakt:
+            print(f"  Filtered out (input movies): GNN={filtered_gnn}, Trakt={filtered_trakt}")
+        
+        response_data = {
             'recommendations': combined_recommendations,
             'trakt_recommendations': trakt_titles,
             'gnn_recommendations': gnn_recommendations
-        })
+        }
+        
+        print(f"Returning response: {response_data}")
+        return jsonify(response_data)
         
     except Exception as e:
         print(f"Error in trakt_recommend: {str(e)}")

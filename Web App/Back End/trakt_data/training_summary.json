@@ -1,12 +1,18 @@
 {
-  "training_date": "2025-07-03T14:22:22.275651",
+  "training_date": "2025-07-24T15:31:15.221694",
   "data_directory": "trakt_data",
-  "num_users": 5,
-  "num_movies": 142,
-  "num_ratings": 480,
+  "num_users": 1000,
+  "num_movies": 3822,
+  "num_ratings": 123333,
   "hidden_channels": 64,
   "learning_rate": 0.001,
-  "epochs": 50,
-  "final_loss": 0.1116107776761055,
-  "model_path": "models/trakt_gnn_model.pth"
+  "epochs": 100,
+  "final_loss": 0.0617535226047039,
+  "best_loss": 0.059730712324380875,
+  "total_training_time": 14.98512578010559,
+  "avg_time_per_epoch": 0.1498512578010559,
+  "device_used": "cpu",
+  "gpu_name": "CPU",
+  "model_path": "models/trakt_gnn_model.pth",
+  "target_movies": 10000
 }

@@ -221,11 +221,21 @@ class TraktAPI:
         
         results = []
         for item in response.json():
-            movie = item['movie']
+            # Handle different response structures
+            if isinstance(item, dict):
+                if 'movie' in item:
+                    movie = item['movie']
+                elif 'title' in item:
+                    movie = item
+                else:
+                    continue
+            else:
+                continue
+                
             results.append({
                 'title': movie['title'],
                 'year': movie.get('year'),
-                'ids': movie['ids'],
+                'ids': movie.get('ids', {}),
                 'overview': movie.get('overview', ''),
                 'rating': movie.get('rating'),
                 'votes': movie.get('votes')

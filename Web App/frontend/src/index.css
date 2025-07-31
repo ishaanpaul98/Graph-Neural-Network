@@ -13,6 +13,84 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Dynamic Gradient Background Animation */
+@keyframes gradientShift {
+  0% {
+    background: linear-gradient(45deg, #1e3c72 0%, #2a5298 25%, #4facfe 50%, #00f2fe 75%, #ffffff 100%);
+    background-size: 400% 400%;
+  }
+  25% {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #ffffff 100%);
+    background-size: 400% 400%;
+  }
+  50% {
+    background: linear-gradient(225deg, #4facfe 0%, #00f2fe 25%, #1e3c72 50%, #2a5298 75%, #ffffff 100%);
+    background-size: 400% 400%;
+  }
+  75% {
+    background: linear-gradient(315deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #ffffff 100%);
+    background-size: 400% 400%;
+  }
+  100% {
+    background: linear-gradient(45deg, #1e3c72 0%, #2a5298 25%, #4facfe 50%, #00f2fe 75%, #ffffff 100%);
+    background-size: 400% 400%;
+  }
+}
+
+/* Floating particles animation */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+    opacity: 0.7;
+  }
+  50% {
+    transform: translateY(-20px) rotate(180deg);
+    opacity: 1;
+  }
+}
+
+/* Smooth scrolling and better performance */
+html {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background: linear-gradient(45deg, #1e3c72 0%, #2a5298 25%, #4facfe 50%, #00f2fe 75%, #ffffff 100%);
+  background-size: 400% 400%;
+  animation: gradientShift 15s ease-in-out infinite;
+  position: relative;
+  overflow-x: hidden;
+  /* Optimize for performance */
+  will-change: background;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Add floating particles */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.3) 0%, transparent 50%),
+    radial-gradient(circle at 40% 40%, rgba(120, 119, 198, 0.2) 0%, transparent 50%);
+  animation: float 20s ease-in-out infinite;
+  pointer-events: none;
+  z-index: -1;
+  /* Optimize for performance */
+  will-change: transform, opacity;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
 a {
   font-weight: 500;
   color: #646cff;
@@ -20,12 +98,6 @@ a {
 }
 a:hover {
   color: #535bf2;
-}
-
-body {
-  margin: 0;
-  min-width: 320px;
-  min-height: 100vh;
 }
 
 h1 {
@@ -68,4 +140,29 @@ button:focus-visible {
 #root {
   width: 100%;
   min-height: 100vh;
+  position: relative;
+  z-index: 1;
+  /* Optimize for performance */
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Ensure smooth animations on all elements */
+* {
+  transition: all 0.3s ease;
+}
+
+/* Optimize for reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  body {
+    animation: none;
+  }
+  
+  body::before {
+    animation: none;
+  }
+  
+  * {
+    transition: none;
+  }
 }
