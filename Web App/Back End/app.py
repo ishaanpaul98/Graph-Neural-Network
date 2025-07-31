@@ -32,7 +32,6 @@ CORS(app, resources={
             "https://*.amplifyapp.net",  # Alternative Amplify domains
             "https://main.d2p9ieiqdwymip.amplifyapp.com",  # Your main branch Amplify domain
             "https://dev.d2p9ieiqdwymip.amplifyapp.com",  # Your dev branch Amplify domain
-            "http://44.249.240.187:8000"  # Your EC2 IP (for testing)
         ],
         "methods": ["GET", "POST", "OPTIONS"],
         "allow_headers": ["Content-Type", "Accept", "X-Session-ID", "Authorization"],

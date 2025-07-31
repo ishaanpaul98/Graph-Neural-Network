@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { Container, CssBaseline, ThemeProvider, createTheme } from '@mui/material'
-import UnifiedMovieForm from './components/UnifiedMovieForm'
+import MovieForm from './components/MovieForm'
 import Recommendations from './components/Recommendations'
 import AuthSuccess from './components/AuthSuccess'
 
@@ -47,7 +47,7 @@ function MainApp() {
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
-      <UnifiedMovieForm onRecommendations={setRecommendations} />
+      <MovieForm onRecommendations={setRecommendations} />
       <Recommendations recommendations={recommendations} />
     </Container>
   )
