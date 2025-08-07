@@ -72,10 +72,18 @@ class MPGNN(nn.Module):
         user_emb = x[:x_user.size(0)]
         movie_emb = x[x_user.size(0):]
         
+        # Ensure edge indices are within bounds
+        max_user_idx = user_emb.size(0) - 1
+        max_movie_idx = movie_emb.size(0) - 1
+        
+        # Clamp edge indices to valid ranges
+        user_indices = torch.clamp(edge_index[0], 0, max_user_idx)
+        movie_indices = torch.clamp(edge_index[1], 0, max_movie_idx)
+        
         # Get edge embeddings by concatenating user and movie embeddings
         edge_emb = torch.cat([
-            user_emb[edge_index[0]],
-            movie_emb[edge_index[1]]
+            user_emb[user_indices],
+            movie_emb[movie_indices]
         ], dim=1)
         
         # Predict edge ratings
@@ -89,5 +97,13 @@ class MPGNN(nn.Module):
         """
         self.eval()
         with torch.no_grad():
-            out = self.forward(x_user, x_movie, edge_index)
-            return torch.sigmoid(out)  # For binary classification/recommendation 
+            try:
+                out = self.forward(x_user, x_movie, edge_index)
+                return torch.sigmoid(out)  # For binary classification/recommendation
+            except Exception as e:
+                print(f"Error in model prediction: {str(e)}")
+                print(f"x_user shape: {x_user.shape}")
+                print(f"x_movie shape: {x_movie.shape}")
+                print(f"edge_index shape: {edge_index.shape}")
+                print(f"edge_index range: {edge_index.min()} to {edge_index.max()}")
+                raise e 

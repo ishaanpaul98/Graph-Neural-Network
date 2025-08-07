@@ -105,12 +105,19 @@ if os.path.exists(MODEL_PATH):
         
         # Load model state
         model.load_state_dict(model_state_dict)
+        model.to(device)
         print("Model loaded successfully from:", MODEL_PATH)
+        print(f"Model device: {next(model.parameters()).device}")
         
         # At startup, after loading model and mappings:
         movie_id_to_title = saved_data['movie_id_to_title']
         movie_id_to_popularity = saved_data['movie_id_to_popularity']
         movie_title_to_id = {title: mid for mid, title in movie_id_to_title.items()}
+        
+        # Validate model dimensions
+        print(f"Number of movies in mapping: {len(movie_mapping)}")
+        print(f"Number of movies in reverse mapping: {len(movie_mapping_reverse)}")
+        print(f"Number of movies in title mapping: {len(movie_id_to_title)}")
         
     except Exception as e:
         print(f"\nError loading model: {str(e)}")
@@ -125,10 +132,10 @@ def prepare_model_input(movie_ids: List[int]) -> tuple:
     Prepare input tensors for the model
     """
     # Create user features (16-dimensional random features)
-    user_features = torch.randn(1, 16)  # Single user with 16 features
+    user_features = torch.randn(1, 16, device=device)  # Single user with 16 features
     
     # Create movie features (16-dimensional random features for all movies)
-    movie_features = torch.randn(num_movies, 16)
+    movie_features = torch.randn(num_movies, 16, device=device)
     
     # Create edge indices for input movies (user -> movie edges)
     edge_indices = []
@@ -141,7 +148,7 @@ def prepare_model_input(movie_ids: List[int]) -> tuple:
         # Fallback: create edges to first few movies
         edge_indices = [[0, i] for i in range(min(3, num_movies))]
     
-    edge_index = torch.tensor(edge_indices, dtype=torch.long).t()
+    edge_index = torch.tensor(edge_indices, dtype=torch.long, device=device).t()
     
     return user_features, movie_features, edge_index
 
@@ -170,21 +177,28 @@ def get_recommendations():
         
         print("Converted to movie IDs:", movie_ids)
         
-        # Prepare model input
+                # Prepare model input
         user_features, movie_features, edge_index = prepare_model_input(movie_ids)
+        
+        print(f"User features shape: {user_features.shape}")
+        print(f"Movie features shape: {movie_features.shape}")
+        print(f"Edge index shape: {edge_index.shape}")
         
         # Get predictions for all movies
         with torch.no_grad():
             # Create edge indices for all possible movie recommendations
-            all_movie_indices = torch.arange(num_movies)
+            all_movie_indices = torch.arange(num_movies, device=device)
             all_edge_index = torch.tensor([
                 [0] * num_movies,  # Source nodes (user)
                 all_movie_indices  # Target nodes (all movies)
-            ], dtype=torch.long)
+            ], dtype=torch.long, device=device)
+            
+            print(f"All edge index shape: {all_edge_index.shape}")
+            print(f"All edge index range: {all_edge_index.min()} to {all_edge_index.max()}")
             
             # Get predictions
             predictions = model.predict(
-                user_features.unsqueeze(0),  # Add batch dimension
+                user_features,  # Already has correct shape (1, 16)
                 movie_features,
                 all_edge_index
             )
@@ -215,7 +229,19 @@ def get_recommendations():
         
     except Exception as e:
         print(f"Error in get_recommendations: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+        import traceback
+        traceback.print_exc()
+        
+        # Provide more specific error messages
+        error_msg = str(e)
+        if "Tensors must have same number of dimensions" in error_msg:
+            error_msg = "Model tensor dimension mismatch. Please check model configuration."
+        elif "out of bounds" in error_msg:
+            error_msg = "Index out of bounds error. Please check movie mappings."
+        elif "CUDA" in error_msg:
+            error_msg = "GPU memory error. Please try again or contact support."
+        
+        return jsonify({'error': error_msg}), 500
 
 @app.route('/api/health', methods=['GET'])
 def health_check():
