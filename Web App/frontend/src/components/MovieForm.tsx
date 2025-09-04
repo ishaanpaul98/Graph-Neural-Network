@@ -257,22 +257,17 @@ const MovieForm: React.FC<MovieFormProps> = ({ onRecommendations }) => {
 
       let response;
       if (isAuthenticated && sessionId) {
-        // Use Trakt API
-        response = await axios.post(API_URLS.TRAKT_RECOMMEND, {
+        response = await axios.post(API_URLS.RECOMMEND, {
           movies: movieTitles
-        }, {
-          headers: { 'X-Session-ID': sessionId }
         });
       } else {
-        // Use GNN model
         response = await axios.post(API_URLS.RECOMMEND, {
           movies: movieTitles
         });
       }
-      
+      console.log("Response:", response);
       console.log('Recommendation response:', response.data);
       onRecommendations(response.data.recommendations);
-      setSelectedMovies([]);
     } catch (err: any) {
       console.error('Recommendation error:', err);
       if (err.response) {
@@ -306,26 +301,19 @@ const MovieForm: React.FC<MovieFormProps> = ({ onRecommendations }) => {
           background: 'linear-gradient(45deg, #1e3c72, #2a5298, #4facfe)',
           backgroundClip: 'text',
           WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
+          WebkitTextFillColor: 'white',
           textShadow: '0 2px 4px rgba(0,0,0,0.1)',
           mb: 3
         }}
       >
-        🎬 Lights, Camera, Recommendations! 🍿
+        Take Advantage of Your Social Network for Personalized Recommendations!
       </Typography>
-      
-      <Typography 
-        variant="h6" 
-        align="center" 
-        sx={{ 
-          color: 'text.secondary',
-          mb: 4,
-          fontStyle: 'italic',
-          fontWeight: 300
-        }}
-      >
-        Share your favorite movies and let our AI discover your next cinematic adventure! ✨
-      </Typography>
+
+      {/* Dynamic spacing between header and authenticator */}
+      <Box sx={{ 
+        height: { xs: 3, sm: 5, md: 7 }, // Responsive height
+        mb: { xs: 3, sm: 5, md: 7 }      // Responsive margin bottom
+      }} />
 
       {/* Authentication Section */}
       <Card sx={{ 

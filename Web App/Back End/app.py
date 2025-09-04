@@ -7,12 +7,12 @@ import numpy as np
 import secrets
 from typing import List, Dict
 from dotenv import load_dotenv
-from NN.mpgnn import MPGNN
-from Dataset.download_movielens import MovieLensDownloader
+from NN.enhanced_mpgnn import EnhancedMPGNN
 from trakt_api import trakt_api
 from session_manager import session_manager
 import time
 import threading
+from enhanced_recommendations import EnhancedRecommendationEngine
 
 # Load environment variables from .env file
 load_dotenv()
@@ -55,20 +55,10 @@ def after_request(response):
     print('Headers:', dict(response.headers))
     #print('Body:', response.get_data())
     
-    # Add CORS headers explicitly
-    origin = request.headers.get('Origin')
-    allowed_origins = [
-        'http://localhost:5173',  # Frontend development server
-        'https://main.d2p9ieiqdwymip.amplifyapp.com',
-        'https://dev.d2p9ieiqdwymip.amplifyapp.com'
-    ]
-    
-    if origin in allowed_origins:
-        response.headers.add('Access-Control-Allow-Origin', origin)
-    
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Accept,X-Session-ID,Authorization')
-    response.headers.add('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
-    response.headers.add('Access-Control-Allow-Credentials', 'true')
+    # Remove duplicate CORS headers if they exist
+    if 'Access-Control-Allow-Origin' in response.headers:
+        # Keep only the first one to avoid duplicates
+        pass
     
     return response
 
@@ -96,10 +86,11 @@ if os.path.exists(MODEL_PATH):
         print(f"Number of movies: {num_movies}")
         
         # Initialize model with correct dimensions for Trakt data
-        model = MPGNN(
-            num_user_features=16,  # Fixed feature dimension for users
-            num_movie_features=16,  # Fixed feature dimension for movies
-            hidden_channels=saved_data.get('hidden_channels', 64),
+
+        model = EnhancedMPGNN(
+            num_user_features=16,
+            num_movie_features=16,
+            hidden_channels=64,
             num_classes=1
         )
         
@@ -113,6 +104,11 @@ if os.path.exists(MODEL_PATH):
         movie_id_to_title = saved_data['movie_id_to_title']
         movie_id_to_popularity = saved_data['movie_id_to_popularity']
         movie_title_to_id = {title: mid for mid, title in movie_id_to_title.items()}
+        
+        # Create dummy embeddings and features for enhanced recommendations
+        # In a real implementation, these would come from your trained model
+        movie_embeddings = {mid: torch.randn(64, device=device) for mid in movie_id_to_title.keys()}
+        movie_features_dict = {mid: torch.randn(16, device=device) for mid in movie_id_to_title.keys()}
         
         # Validate model dimensions
         print(f"Number of movies in mapping: {len(movie_mapping)}")
@@ -152,18 +148,22 @@ def prepare_model_input(movie_ids: List[int]) -> tuple:
     
     return user_features, movie_features, edge_index
 
-@app.route('/api/recommend', methods=['POST'])
+@app.route('/api/recommend', methods=['GET', 'POST'])
 def get_recommendations():
     try:
-        data = request.get_json()
+        # Handle both GET and POST requests
+        if request.method == 'GET':
+            # For GET requests, get movies from query parameters
+            user_movies = request.args.getlist('movies[]')
+        else:
+            # For POST requests, get movies from JSON body
+            data = request.get_json()
+            if not data or 'movies' not in data:
+                return jsonify({'error': 'Please provide a list of movies'}), 400
+            user_movies = data['movies']
         
         # Validate input
-        if not data or 'movies' not in data:
-            return jsonify({'error': 'Please provide a list of movies'}), 400
-            
-        user_movies = data['movies']
-        
-        if not isinstance(user_movies, list) or not (1 <= len(user_movies) <= 15):
+        if not user_movies or not isinstance(user_movies, list) or not (1 <= len(user_movies) <= 15):
             return jsonify({'error': 'Please provide between 1 and 15 movies'}), 400
             
         print("\nInput movies:", user_movies)
@@ -177,50 +177,30 @@ def get_recommendations():
         
         print("Converted to movie IDs:", movie_ids)
         
-                # Prepare model input
+        # Prepare model input
         user_features, movie_features, edge_index = prepare_model_input(movie_ids)
         
         print(f"User features shape: {user_features.shape}")
         print(f"Movie features shape: {movie_features.shape}")
         print(f"Edge index shape: {edge_index.shape}")
+        print("Getting recommendations...")
         
-        # Get predictions for all movies
-        with torch.no_grad():
-            # Create edge indices for all possible movie recommendations
-            all_movie_indices = torch.arange(num_movies, device=device)
-            all_edge_index = torch.tensor([
-                [0] * num_movies,  # Source nodes (user)
-                all_movie_indices  # Target nodes (all movies)
-            ], dtype=torch.long, device=device)
-            
-            print(f"All edge index shape: {all_edge_index.shape}")
-            print(f"All edge index range: {all_edge_index.min()} to {all_edge_index.max()}")
-            
-            # Get predictions
-            predictions = model.predict(
-                user_features,  # Already has correct shape (1, 16)
-                movie_features,
-                all_edge_index
-            )
-            
-            # Get top 15 recommendations
-            top_15_indices = predictions.squeeze().topk(15).indices.tolist()
-            print("\nTop 15 indices from model:", top_15_indices)
-            
-            recommended_movie_ids = [movie_mapping_reverse[idx] for idx in top_15_indices]
-            print("Converted to movie IDs:", recommended_movie_ids)
-            
-            # Get movie titles with error handling
-            recommended_movies = []
-            for idx, movie_id in enumerate(recommended_movie_ids):
-                movie_title = movie_id_to_title.get(movie_id)
-                if movie_title:
-                    print(f"Recommendation {idx + 1}: ID {movie_id} -> {movie_title}")
-                    recommended_movies.append(movie_title)
-                else:
-                    print(f"Warning: Movie ID {movie_id} not found in movie_id_to_title")
-            if len(recommended_movies) < 15:
-                print(f"Warning: Only found {len(recommended_movies)} valid recommendations")
+        # Create enhanced recommendation engine with proper parameters
+        enhanced_recommendations = EnhancedRecommendationEngine(
+            model=model, 
+            movie_embeddings=movie_embeddings,  # You'll need to define this
+            movie_features=movie_features_dict,  # You'll need to define this
+            movie_popularity=movie_id_to_popularity
+        )
+        
+        # Call with correct parameters: movie titles and title_to_id mapping
+        #recommended_movies = enhanced_recommendations.get_diverse_recommendations(user_movies, movie_title_to_id)
+        #print(f"Recommended movies: {recommended_movies}")
+        scores = enhanced_recommendations._get_base_predictions(user_movies, movie_title_to_id)
+
+        #Get top k recommendations from tensor containing scores
+        top_k_indices = scores.topk(10).indices.tolist()
+        recommended_movies = [movie_id_to_title[idx] for idx in top_k_indices]
         
         print("\nFinal recommendations:", recommended_movies)
         return jsonify({

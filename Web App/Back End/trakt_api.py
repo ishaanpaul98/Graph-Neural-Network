@@ -211,7 +211,7 @@ class TraktAPI:
         
         return results
     
-    def get_movie_recommendations(self, access_token: str, limit: int = 10) -> List[Dict]:
+    def     get_movie_recommendations(self, access_token: str, limit: int = 10) -> List[Dict]:
         """Get personalized movie recommendations for the user"""
         url = f"{self.base_url}/recommendations/movies"
         params = {'limit': limit, 'extended': 'full'}

@@ -13,22 +13,6 @@ const Recommendations: React.FC<RecommendationsProps> = ({ recommendations }) =>
   return (
     <Box sx={{ maxWidth: 600, mx: 'auto', mt: 4, p: 3 }}>
       <Typography 
-        variant="h4" 
-        gutterBottom 
-        align="center"
-        sx={{ 
-          fontWeight: 'bold',
-          background: 'linear-gradient(45deg, #1e3c72, #2a5298, #4facfe)',
-          backgroundClip: 'text',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          textShadow: '0 2px 4px rgba(0,0,0,0.1)',
-          mb: 2
-        }}
-      >
-        🎯 Your Perfect Matches! 🎬
-      </Typography>
-      <Typography 
         variant="body1" 
         align="center" 
         sx={{ 
@@ -37,7 +21,7 @@ const Recommendations: React.FC<RecommendationsProps> = ({ recommendations }) =>
           fontStyle: 'italic'
         }}
       >
-        Based on your taste, here are some amazing films you'll love! ✨
+        Based on your taste, here are some recommendations!
       </Typography>
       <Paper 
         elevation={3}

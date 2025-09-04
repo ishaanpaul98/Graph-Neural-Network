@@ -17,7 +17,9 @@ Learning/Hands On With GNNs/Part 4/CSV-original/
 Learning/Hands On With GNNs/Part 4/Book Crossing Dataset/
 Web App/Back End/Dataset/*
 Web App/Back End/models/*
-Web App/Back End/trakt_data/*
+Web App/Back End/NN/trakt_data/*
+Web App/Back End/__pycache__
+Web App/Back End/NN/__pycache__
 .venv
 *.pem
 *.pem.backup

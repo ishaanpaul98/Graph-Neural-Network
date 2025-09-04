@@ -7,8 +7,11 @@ import os
 import json
 from typing import List, Dict, Tuple
 from dotenv import load_dotenv
-from NN.mpgnn import MPGNN
-from trakt_data_collector import data_collector
+from enhanced_mpgnn import EnhancedMPGNN
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from Dataset.trakt_data_collector import data_collector
 import time
 import random
 from datetime import datetime
@@ -318,7 +321,7 @@ class ComprehensiveMovieCollector:
         
         # 1. Collect by popularity tiers
         print("\n1. Collecting by popularity tiers...")
-        popularity_movies = self.collect_movies_by_popularity_tiers([100, 500, 1000, 2000, 3000])
+        popularity_movies = self.collect_movies_by_popularity_tiers([100000])
         all_movies.extend(popularity_movies)
         print(f"Total movies so far: {len(all_movies)}")
         
@@ -331,19 +334,19 @@ class ComprehensiveMovieCollector:
             'musical', 'biography', 'history', 'sport', 'superhero',
             'zombie', 'vampire', 'alien', 'robot', 'time travel'
         ]
-        genre_movies = self.collect_movies_by_genre(genres, 300)
+        genre_movies = self.collect_movies_by_genre(genres, 100000)
         all_movies.extend(genre_movies)
         print(f"Total movies so far: {len(all_movies)}")
         
         # 3. Collect by year range
         print("\n3. Collecting by year range...")
-        year_movies = self.collect_movies_by_year(2020, 2024, 800)
+        year_movies = self.collect_movies_by_year(2020, 2025, 10000)
         all_movies.extend(year_movies)
         print(f"Total movies so far: {len(all_movies)}")
         
         # 4. Collect trending and recent
         print("\n4. Collecting trending and recent movies...")
-        trending_movies = self.collect_movies_by_trending_and_recent(1000, 3)
+        trending_movies = self.collect_movies_by_trending_and_recent(100000, 3)
         all_movies.extend(trending_movies)
         print(f"Total movies so far: {len(all_movies)}")
         
@@ -382,6 +385,7 @@ class ComprehensiveMovieCollector:
         
         print(f"Comprehensive movie dataset saved to: {filename}")
         return final_movies
+
 
 def train_gnn_with_comprehensive_data(data_dir: str = 'trakt_data', 
                                      hidden_channels: int = 64,
@@ -492,9 +496,15 @@ def train_gnn_with_comprehensive_data(data_dir: str = 'trakt_data',
     num_users = mappings['num_users']
     num_movies = mappings['num_movies']
     
-    model = MPGNN(
+    """model = MPGNN(
         num_user_features=16,  # Fixed feature dimension for users
         num_movie_features=16,  # Fixed feature dimension for movies
+        hidden_channels=hidden_channels,
+        num_classes=1
+    )"""
+    model = EnhancedMPGNN(
+        num_user_features=16,
+        num_movie_features=16,
         hidden_channels=hidden_channels,
         num_classes=1
     )
@@ -508,7 +518,7 @@ def train_gnn_with_comprehensive_data(data_dir: str = 'trakt_data',
     # Set up mixed precision training if available and requested
     scaler = None
     if use_mixed_precision and torch.cuda.is_available():
-        scaler = torch.cuda.amp.GradScaler()
+        scaler = torch.amp.GradScaler('cuda')
         print("🔧 Using mixed precision training for faster GPU computation")
     
     # Training loop
@@ -649,6 +659,307 @@ def train_gnn_with_comprehensive_data(data_dir: str = 'trakt_data',
     
     return True
 
+def train_gnn_with_comprehensive_data(data_dir: str = 'trakt_data', 
+                                     hidden_channels: int = 64,
+                                     learning_rate: float = 0.001,
+                                     epochs: int = 100,
+                                     batch_size: int = 32,
+                                     save_path: str = '../models/trakt_gnn_model.pth',
+                                     target_movies: int = 10000,
+                                     use_mixed_precision: bool = True,
+                                     patience: int = 20,  # Early stopping patience
+                                     min_delta: float = 1e-4):  # Minimum improvement threshold
+    """Train GNN model with comprehensive Trakt data"""
+    
+    print("Starting comprehensive GNN training with Trakt data...")
+    
+    # Initialize data processor
+    processor = EnhancedTraktDataProcessor(data_dir)
+    
+    # Check if we need to collect more data
+    if not processor.load_data() or len(processor.movies_df) < target_movies * 0.8:  # 80% of target
+        print(f"Insufficient data ({len(processor.movies_df) if processor.movies_df is not None else 0} movies). Collecting comprehensive dataset...")
+        
+        # Initialize comprehensive collector
+        collector = ComprehensiveMovieCollector(data_dir)
+        
+        # Collect comprehensive movie dataset
+        comprehensive_movies = collector.collect_comprehensive_movie_dataset(target_movies)
+        
+        # Create synthetic user data for training
+        print("Creating synthetic user data for training...")
+        synthetic_users = []
+        synthetic_ratings = []
+        
+        # Create 1000 synthetic users
+        num_users = 1000
+        for i in range(num_users):
+            user_id = i
+            username = f"synthetic_user_{i}"
+            synthetic_users.append({
+                'user_id': user_id,
+                'username': username
+            })
+            
+            # Each user rates 50-200 random movies
+            num_ratings = random.randint(50, 200)
+            user_movies = random.sample(comprehensive_movies, min(num_ratings, len(comprehensive_movies)))
+            
+            for j, movie in enumerate(user_movies):
+                # Generate realistic ratings (biased towards positive)
+                rating = random.choices([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 
+                                      weights=[0.05, 0.05, 0.1, 0.1, 0.15, 0.15, 0.2, 0.15, 0.05, 0.05])[0]
+                
+                synthetic_ratings.append({
+                    'user_id': user_id,
+                    'movie_id': j,  # Use index as movie_id
+                    'rating': rating,
+                    'rated_at': datetime.now().isoformat()
+                })
+        
+        # Create movies dataframe
+        movies_data = []
+        for i, movie in enumerate(comprehensive_movies):
+            movies_data.append({
+                'movie_id': i,
+                'trakt_id': movie['ids'].get('trakt', i),
+                'title': movie['title'],
+                'year': movie.get('year'),
+                'rating': movie.get('rating', 0),
+                'votes': movie.get('votes', 0)
+            })
+        
+        # Save synthetic dataset
+        users_df = pd.DataFrame(synthetic_users)
+        movies_df = pd.DataFrame(movies_data)
+        ratings_df = pd.DataFrame(synthetic_ratings)
+        
+        users_df.to_csv(f"{data_dir}/users.csv", index=False)
+        movies_df.to_csv(f"{data_dir}/movies.csv", index=False)
+        ratings_df.to_csv(f"{data_dir}/ratings.csv", index=False)
+        
+        print(f"Synthetic dataset created:")
+        print(f"  Users: {len(users_df)}")
+        print(f"  Movies: {len(movies_df)}")
+        print(f"  Ratings: {len(ratings_df)}")
+        
+        # Reload data
+        processor.load_data()
+    
+    # Preprocess data
+    node_features, edge_index, edge_attr, labels, mappings = processor.preprocess_data()
+    
+    if node_features is None:
+        print("Failed to preprocess data. Exiting.")
+        return False
+    
+    # Create PyTorch Geometric Data object
+    data = Data(
+        x=node_features,
+        edge_index=edge_index,
+        edge_attr=edge_attr,
+        y=labels
+    )
+    
+    print(f"Data prepared:")
+    print(f"  Nodes: {data.x.size(0)}")
+    print(f"  Edges: {data.edge_index.size(1)}")
+    print(f"  Labels: {data.y.size(0)}")
+    
+    # Initialize model
+    num_users = mappings['num_users']
+    num_movies = mappings['num_movies']
+    
+    """model = MPGNN(
+        num_user_features=16,  # Fixed feature dimension for users
+        num_movie_features=16,  # Fixed feature dimension for movies
+        hidden_channels=hidden_channels,
+        num_classes=1
+    )"""
+    model = EnhancedMPGNN(
+        num_user_features=16,
+        num_movie_features=16,
+        hidden_channels=hidden_channels,
+        num_classes=1
+    )
+    
+    # Move model to GPU
+    model = model.to(DEVICE)
+    
+    # Set up optimizer
+    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+    
+    # Set up mixed precision training if available and requested
+    scaler = None
+    if use_mixed_precision and torch.cuda.is_available():
+        scaler = torch.amp.GradScaler('cuda')
+        print("🔧 Using mixed precision training for faster GPU computation")
+    
+    # Training loop
+    model.train()
+    print(f"\nStarting training for {epochs} epochs...")
+    
+    # Split node features for user and movie nodes
+    num_users = mappings['num_users']
+    x_user = data.x[:num_users].to(DEVICE)
+    x_movie = data.x[num_users:].to(DEVICE)
+    
+    # Create proper edge indices for the model directly from ratings data
+    user_to_movie_edges = []
+    target_ratings = []
+    
+    # Get user and movie mappings
+    user_id_to_idx = mappings['user_id_to_idx']
+    movie_id_to_idx = mappings['movie_id_to_idx']
+    
+    # Create edges directly from ratings
+    for _, rating in processor.ratings_df.iterrows():
+        user_idx = user_id_to_idx[rating['user_id']]
+        movie_idx = movie_id_to_idx[rating['movie_id']]
+        rating_value = rating['rating'] / 10.0  # Normalize to [0, 1]
+        
+        user_to_movie_edges.append([user_idx, movie_idx])
+        target_ratings.append(rating_value)
+    
+    if not user_to_movie_edges:
+        print("Error: No user->movie edges found. Check data preprocessing.")
+        return False
+    
+    edge_index_adjusted = torch.tensor(user_to_movie_edges, dtype=torch.long).t().contiguous().to(DEVICE)
+    target_ratings = torch.tensor(target_ratings, dtype=torch.float).to(DEVICE)
+    
+    print(f"Adjusted edge indices: {edge_index_adjusted.size(1)} user->movie edges")
+    print(f"Target ratings: {target_ratings.size(0)} ratings")
+    
+    # Training monitoring
+    start_time = time.time()
+    best_loss = float('inf')
+    patience_counter = 0  # Early stopping counter
+    
+    print(f"\n🚀 Starting GPU-accelerated training for {epochs} epochs...")
+    print(f"   Early stopping patience: {patience} epochs")
+    if torch.cuda.is_available():
+        print(f"   GPU Memory Usage: {torch.cuda.memory_allocated() / 1024**3:.2f} GB")
+    
+    for epoch in range(epochs):
+        optimizer.zero_grad()
+        
+        # Forward pass with mixed precision if available
+        if scaler is not None:
+            with torch.cuda.amp.autocast():
+                out = model(x_user, x_movie, edge_index_adjusted)
+                loss = F.mse_loss(out.squeeze(), target_ratings)
+            
+            # Backward pass with gradient scaling
+            scaler.scale(loss).backward()
+            scaler.step(optimizer)
+            scaler.update()
+        else:
+            # Standard forward and backward pass
+            out = model(x_user, x_movie, edge_index_adjusted)
+            loss = F.mse_loss(out.squeeze(), target_ratings)
+            loss.backward()
+            optimizer.step()
+        
+        # Track best loss and early stopping
+        if loss.item() < best_loss - min_delta:
+            best_loss = loss.item()
+            patience_counter = 0
+            # Save best model
+            torch.save({
+                'model_state_dict': model.state_dict(),
+                'user_mapping': mappings['user_id_to_idx'],
+                'movie_mapping': mappings['movie_id_to_idx'],
+                'movie_mapping_reverse': mappings['movie_idx_to_id'],
+                'movie_id_to_title': mappings['movie_id_to_title'],
+                'movie_id_to_popularity': mappings['movie_id_to_popularity'],
+                'movie_title_to_id': mappings['movie_title_to_id'],
+                'dataset_size': mappings['dataset_size'],
+                'num_users': mappings['num_users'],
+                'num_movies': mappings['num_movies'],
+                'hidden_channels': hidden_channels
+            }, save_path.replace('.pth', '_best.pth'))
+        else:
+            patience_counter += 1
+        
+        # Early stopping check
+        if patience_counter >= patience:
+            print(f"\n🛑 Early stopping triggered! No improvement for {patience} epochs.")
+            print(f"   Best loss: {best_loss:.4f} at epoch {epoch - patience + 1}")
+            break
+        
+        if (epoch + 1) % 10 == 0:
+            elapsed_time = time.time() - start_time
+            avg_time_per_epoch = elapsed_time / (epoch + 1)
+            if torch.cuda.is_available():
+                gpu_memory = torch.cuda.memory_allocated() / 1024**3
+                print(f'Epoch {epoch+1:03d}, Loss: {loss.item():.4f}, Best: {best_loss:.4f}, '
+                      f'Patience: {patience_counter}/{patience}, '
+                      f'Time/epoch: {avg_time_per_epoch:.2f}s, GPU Memory: {gpu_memory:.2f} GB')
+            else:
+                print(f'Epoch {epoch+1:03d}, Loss: {loss.item():.4f}, Best: {best_loss:.4f}, '
+                      f'Patience: {patience_counter}/{patience}, '
+                      f'Time/epoch: {avg_time_per_epoch:.2f}s')
+    
+    total_training_time = time.time() - start_time
+    print(f"\n✅ Training completed!")
+    print(f"   Total time: {total_training_time:.2f} seconds")
+    print(f"   Average time per epoch: {total_training_time/epochs:.2f} seconds")
+    print(f"   Best loss achieved: {best_loss:.4f}")
+    
+    if torch.cuda.is_available():
+        print(f"   Final GPU Memory Usage: {torch.cuda.memory_allocated() / 1024**3:.2f} GB")
+        # Clear GPU cache
+        torch.cuda.empty_cache()
+    
+    # Save model and mappings
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
+    
+    torch.save({
+        'model_state_dict': model.state_dict(),
+        'user_mapping': mappings['user_id_to_idx'],
+        'movie_mapping': mappings['movie_id_to_idx'],
+        'movie_mapping_reverse': mappings['movie_idx_to_id'],
+        'movie_id_to_title': mappings['movie_id_to_title'],
+        'movie_id_to_popularity': mappings['movie_id_to_popularity'],
+        'movie_title_to_id': mappings['movie_title_to_id'],
+        'dataset_size': mappings['dataset_size'],
+        'num_users': mappings['num_users'],
+        'num_movies': mappings['num_movies'],
+        'hidden_channels': hidden_channels
+    }, save_path)
+    
+    print(f"Model saved to: {save_path}")
+    
+    # Save training summary
+    summary = {
+        'training_date': pd.Timestamp.now().isoformat(),
+        'data_directory': data_dir,
+        'num_users': mappings['num_users'],
+        'num_movies': mappings['num_movies'],
+        'num_ratings': mappings['dataset_size'],
+        'hidden_channels': hidden_channels,
+        'learning_rate': learning_rate,
+        'epochs': epochs,
+        'final_loss': loss.item(),
+        'best_loss': best_loss,
+        'total_training_time': total_training_time,
+        'avg_time_per_epoch': total_training_time/epochs,
+        'device_used': str(DEVICE),
+        'gpu_name': torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CPU',
+        'model_path': save_path,
+        'target_movies': target_movies
+    }
+    
+    summary_path = os.path.join(data_dir, 'training_summary.json')
+    with open(summary_path, 'w') as f:
+        json.dump(summary, f, indent=2)
+    
+    print(f"Training summary saved to: {summary_path}")
+    
+    return True
+
+
 def collect_and_train_comprehensive(access_tokens: List[str] = None, 
                                    usernames: List[str] = None,
                                    data_dir: str = 'trakt_data',
@@ -691,10 +1002,10 @@ if __name__ == "__main__":
     # Train with comprehensive data collection
     success = collect_and_train_comprehensive(
         data_dir='trakt_data',
-        target_movies=10000,  # 10k movies
+        target_movies=1000000,  # 1M movies
         hidden_channels=64,
         learning_rate=0.001,
-        epochs=100,
+        epochs=1000,
         use_mixed_precision=True  # Enable GPU acceleration with mixed precision
     )
     

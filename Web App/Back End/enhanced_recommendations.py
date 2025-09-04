@@ -15,9 +15,54 @@ class EnhancedRecommendationEngine:
         self.movie_embeddings = movie_embeddings
         self.movie_features = movie_features
         self.movie_popularity = movie_popularity
+        self.device = next(self.model.parameters()).device
         
+        # Validate data consistency
+        self._validate_data()
+    
+    def _validate_data(self):
+        """Validate that the data is consistent and usable"""
+        if not self.movie_embeddings:
+            print("Warning: movie_embeddings is empty")
+            return
+        
+        if not self.movie_features:
+            print("Warning: movie_features is empty")
+            return
+        
+        if not self.movie_popularity:
+            print("Warning: movie_popularity is empty")
+            return
+        
+        # Check for data consistency
+        movie_ids = set(self.movie_embeddings.keys())
+        feature_ids = set(self.movie_features.keys())
+        popularity_ids = set(self.movie_popularity.keys())
+        
+        print(f"Data validation: {len(movie_ids)} movies in embeddings, {len(feature_ids)} in features, {len(popularity_ids)} in popularity")
+        
+        # Check for missing data
+        missing_features = movie_ids - feature_ids
+        missing_popularity = movie_ids - popularity_ids
+        
+        if missing_features:
+            print(f"Warning: {len(missing_features)} movies missing from features")
+        
+        if missing_popularity:
+            print(f"Warning: {len(missing_popularity)} movies missing from popularity data")
+        
+        # Check for extra data
+        extra_features = feature_ids - movie_ids
+        extra_popularity = popularity_ids - movie_ids
+        
+        if extra_features:
+            print(f"Info: {len(extra_features)} extra movies in features not in embeddings")
+        
+        if extra_popularity:
+            print(f"Info: {len(extra_popularity)} extra movies in popularity not in embeddings")
+    
     def get_diverse_recommendations(self, user_movies: List[str], movie_title_to_id: Dict, 
-                                  num_recommendations: int = 15, diversity_weight: float = 0.3):
+                                   num_recommendations: int = 15, diversity_weight: float = 0.3):
         """
         Get diverse recommendations using multiple strategies
         """
@@ -29,26 +74,90 @@ class EnhancedRecommendationEngine:
             'collaborative': self._collaborative_filtering,
             'content_based': self._content_based_filtering,
             'popularity': self._popularity_based,
-            'diversity': self._diversity_based,
+            #'diversity': self._diversity_based,
             'novelty': self._novelty_based
         }
         
         # Combine strategies
         final_scores = self._combine_strategies(base_predictions, strategies, user_movies, movie_title_to_id)
+        print("Final scores:", final_scores)
         
         # Apply diversity penalty
-        final_scores = self._apply_diversity_penalty(final_scores, diversity_weight)
+        #final_scores = self._apply_diversity_penalty(final_scores, diversity_weight)
+        #print("Final scores after diversity penalty:", final_scores)
         
         # Get top recommendations
         top_indices = torch.topk(final_scores, num_recommendations).indices
+        print("Top indices:", top_indices)
         
-        return top_indices.tolist()
+        # Convert indices to movie titles
+        movie_id_to_title = {v: k for k, v in movie_title_to_id.items()}
+        recommended_movies = []
+        
+        for pred_idx in top_indices:
+            if pred_idx < len(movie_title_to_id):
+                movie_id = list(movie_title_to_id.values())[pred_idx]
+                movie_title = movie_id_to_title.get(movie_id)
+                if movie_title and movie_title not in user_movies:  # Exclude input movies
+                    recommended_movies.append(movie_title)
+        
+        return recommended_movies
     
+    def prepare_model_input(self, movie_ids: List[int]) -> tuple:
+        """
+        Prepare input tensors for the model
+        """
+        # Get total number of movies from the movie embeddings
+        num_movies = len(self.movie_embeddings)
+        
+        # Create user features (16-dimensional random features)
+        user_features = torch.randn(1, 16, device=self.device)  # Single user with 16 features
+        
+        # Create movie features (16-dimensional random features for all movies)
+        movie_features = torch.randn(num_movies, 16, device=self.device)
+        
+        # Create edge indices for input movies (user -> movie edges)
+        edge_indices = []
+        for movie_id in movie_ids:
+            # Map movie_id to index (assuming movie_ids are sequential or use the ID directly)
+            movie_idx = movie_id if isinstance(movie_id, int) else hash(movie_id) % num_movies
+            edge_indices.append([0, movie_idx])  # user_idx=0, movie_idx
+        
+        if not edge_indices:
+            # Fallback: create edges to first few movies
+            edge_indices = [[0, i] for i in range(min(3, num_movies))]
+        
+        edge_index = torch.tensor(edge_indices, dtype=torch.long, device=self.device).t()
+        
+        return user_features, movie_features, edge_index
+
     def _get_base_predictions(self, user_movies: List[str], movie_title_to_id: Dict) -> torch.Tensor:
         """Get base predictions from the GNN model"""
-        # This would use your existing GNN prediction logic
-        # For now, return random scores as placeholder
-        return torch.rand(len(movie_title_to_id))
+        user_features, movie_features, edge_index = self.prepare_model_input(movie_title_to_id.values())
+        print("Getting base predictions...")
+        # Get predictions for all movies
+        with torch.no_grad():
+            # Get total number of movies from the movie title to ID mapping
+            num_movies = len(movie_title_to_id)
+            # Create edge indices for all possible movie recommendations
+            all_movie_indices = torch.arange(num_movies, device=self.device)
+            all_edge_index = torch.tensor([
+                [0] * num_movies,  # Source nodes (user)
+                all_movie_indices  # Target nodes (all movies)
+            ], dtype=torch.long, device=self.device)
+            
+            print(f"All edge index shape: {all_edge_index.shape}")
+            print(f"All edge index range: {all_edge_index.min()} to {all_edge_index.max()}")
+            
+            # Get predictions
+            predictions = self.model.predict(
+                user_features,  # Already has correct shape (1, 16)
+                movie_features,
+                all_edge_index
+            )
+            
+            print("Recommendations:", predictions)
+            return predictions.squeeze()
     
     def _collaborative_filtering(self, base_scores: torch.Tensor, user_movies: List[str], 
                                movie_title_to_id: Dict) -> torch.Tensor:
@@ -65,6 +174,14 @@ class EnhancedRecommendationEngine:
         
         similarities = cosine_similarity(user_embeddings, all_embeddings)
         avg_similarity = np.mean(similarities, axis=0)
+        
+        # Ensure tensor has same size as base_scores
+        if len(avg_similarity) != len(base_scores):
+            # Pad or truncate to match base_scores size
+            if len(avg_similarity) > len(base_scores):
+                avg_similarity = avg_similarity[:len(base_scores)]
+            else:
+                avg_similarity = np.pad(avg_similarity, (0, len(base_scores) - len(avg_similarity)), 'constant')
         
         return torch.tensor(avg_similarity, dtype=torch.float32)
     
@@ -84,6 +201,14 @@ class EnhancedRecommendationEngine:
         all_features = torch.stack(list(self.movie_features.values()))
         similarities = torch.cosine_similarity(avg_user_preferences.unsqueeze(0), all_features)
         
+        # Ensure tensor has same size as base_scores
+        if len(similarities) != len(base_scores):
+            # Pad or truncate to match base_scores size
+            if len(similarities) > len(base_scores):
+                similarities = similarities[:len(base_scores)]
+            else:
+                similarities = torch.cat([similarities, torch.zeros(len(base_scores) - len(similarities), device=similarities.device)])
+        
         return similarities
     
     def _popularity_based(self, base_scores: torch.Tensor, user_movies: List[str], 
@@ -93,7 +218,7 @@ class EnhancedRecommendationEngine:
         return popularity_scores / popularity_scores.max()
     
     def _diversity_based(self, base_scores: torch.Tensor, user_movies: List[str], 
-                        movie_title_to_id: Dict) -> torch.Tensor:
+                         movie_title_to_id: Dict) -> torch.Tensor:
         """Diversity-based scoring to avoid similar recommendations"""
         user_movie_ids = [movie_title_to_id.get(movie) for movie in user_movies if movie in movie_title_to_id]
         
@@ -109,6 +234,15 @@ class EnhancedRecommendationEngine:
         
         # Convert similarity to diversity (1 - similarity)
         diversity_scores = 1 - max_similarity
+        
+        # Ensure tensor has same size as base_scores
+        if len(diversity_scores) != len(base_scores):
+            # Pad or truncate to match base_scores size
+            if len(diversity_scores) > len(base_scores):
+                diversity_scores = diversity_scores[:len(base_scores)]
+            else:
+                diversity_scores = np.pad(diversity_scores, (0, len(base_scores) - len(diversity_scores)), 'constant')
+        
         return torch.tensor(diversity_scores, dtype=torch.float32)
     
     def _novelty_based(self, base_scores: torch.Tensor, user_movies: List[str], 
@@ -129,10 +263,10 @@ class EnhancedRecommendationEngine:
         
         # Weights for different strategies
         weights = {
-            'collaborative': 0.3,
+            'collaborative': 0.45,
             'content_based': 0.25,
-            'popularity': 0.15,
-            'diversity': 0.2,
+            'popularity': 0.10,
+            #'diversity': 0.1,
             'novelty': 0.1
         }
         

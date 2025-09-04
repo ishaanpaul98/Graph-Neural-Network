@@ -1,7 +1,8 @@
 // API Configuration
 export const API_CONFIG = {
   // Your EC2 Backend API (handles both your GNN model and Trakt API proxying)
-  BACKEND_BASE_URL: import.meta.env.VITE_BACKEND_BASE_URL || 'https://api.ishaanpaul.com',
+  //BACKEND_BASE_URL: import.meta.env.VITE_BACKEND_BASE_URL || 'https://api.ishaanpaul.com',
+  BACKEND_BASE_URL: 'http://localhost:8000',
   
   ENDPOINTS: {
     // Your EC2 Backend endpoints (GNN model)
@@ -11,7 +12,7 @@ export const API_CONFIG = {
     // Trakt API endpoints (proxied through your backend)
     TRAKT_AUTH: '/auth/trakt',
     TRAKT_SEARCH: '/api/trakt/search',
-    TRAKT_RECOMMEND: '/api/trakt/recommend',
+    TRAKT_RECOMMEND: '/api/recommend',
     TRAKT_TRENDING: '/api/trakt/trending',
     TRAKT_POPULAR: '/api/trakt/popular',
     TRAKT_USER_HISTORY: '/api/trakt/user-history',
@@ -32,7 +33,7 @@ export const API_URLS = {
   // Trakt API endpoints (proxied through your backend)
   TRAKT_AUTH: buildApiUrl(API_CONFIG.ENDPOINTS.TRAKT_AUTH),
   TRAKT_SEARCH: buildApiUrl(API_CONFIG.ENDPOINTS.TRAKT_SEARCH),
-  TRAKT_RECOMMEND: buildApiUrl(API_CONFIG.ENDPOINTS.TRAKT_RECOMMEND),
+  TRAKT_RECOMMEND: buildApiUrl(API_CONFIG.ENDPOINTS.RECOMMEND),
   TRAKT_TRENDING: buildApiUrl(API_CONFIG.ENDPOINTS.TRAKT_TRENDING),
   TRAKT_POPULAR: buildApiUrl(API_CONFIG.ENDPOINTS.TRAKT_POPULAR),
   TRAKT_USER_HISTORY: buildApiUrl(API_CONFIG.ENDPOINTS.TRAKT_USER_HISTORY),
