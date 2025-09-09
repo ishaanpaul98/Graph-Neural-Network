@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Box, Typography, CircularProgress, Button } from '@mui/material';
 import { CheckCircle, Error } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import { sessionManager } from '../utils/sessionManager';
 
 const AuthSuccess: React.FC = () => {
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
@@ -9,13 +10,13 @@ const AuthSuccess: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Get session ID from URL parameters or localStorage
+    // Get session ID from URL parameters
     const urlParams = new URLSearchParams(window.location.search);
-    const sessionId = urlParams.get('session_id') || localStorage.getItem('trakt_session_id');
+    const sessionId = urlParams.get('session_id');
     
     if (sessionId) {
-      // Store session ID in localStorage
-      localStorage.setItem('trakt_session_id', sessionId);
+      // Store session ID using session manager
+      sessionManager.setSession(sessionId);
       setStatus('success');
       setMessage('Successfully connected to Trakt!');
       

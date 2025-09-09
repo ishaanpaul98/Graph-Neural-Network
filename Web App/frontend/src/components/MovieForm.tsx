@@ -17,17 +17,17 @@ import {
 } from '@mui/material';
 import { 
   Close as CloseIcon, 
-  Login, 
-  Logout, 
   TrendingUp, 
   Star,
   Movie
 } from '@mui/icons-material';
 import axios from 'axios';
 import { API_URLS } from '../config/api';
+import { sessionManager } from '../utils/sessionManager';
 
 interface MovieFormProps {
   onRecommendations: (recommendations: string[]) => void;
+  isAuthenticated?: boolean;
 }
 
 interface FormData {
@@ -64,7 +64,7 @@ interface TrendingMovie {
   watchers: number;
 }
 
-const MovieForm: React.FC<MovieFormProps> = ({ onRecommendations }) => {
+const MovieForm: React.FC<MovieFormProps> = ({ onRecommendations, isAuthenticated = false }) => {
   const { handleSubmit } = useForm<FormData>();
   
   // State management
@@ -75,38 +75,25 @@ const MovieForm: React.FC<MovieFormProps> = ({ onRecommendations }) => {
   const [searchResults, setSearchResults] = useState<MovieOption[]>([]);
   const [recentAndFavs, setRecentAndFavs] = useState<MovieOption[]>([]);
   const [trendingMovies, setTrendingMovies] = useState<TrendingMovie[]>([]);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [sessionId, setSessionId] = useState<string | null>(null);
   const [searchLoading, setSearchLoading] = useState(false);
   const [duplicateWarning, setDuplicateWarning] = useState(false);
   const [limitWarning, setLimitWarning] = useState(false);
 
   // Initialize component
   useEffect(() => {
-    const storedSessionId = localStorage.getItem('trakt_session_id');
-    if (storedSessionId) {
-      setSessionId(storedSessionId);
-      setIsAuthenticated(true);
-      fetchRecentAndFavs(storedSessionId);
-    }
-    
-    fetchTrendingMovies();
-    fetchAvailableMovies();
-    
-    // Listen for authentication success
-    const handleMessage = (event: MessageEvent) => {
-      if (event.data.type === 'TRAKT_AUTH_SUCCESS') {
-        setSessionId(event.data.sessionId);
-        setIsAuthenticated(true);
-        setError(null);
-        setLoading(false);
-        fetchRecentAndFavs(event.data.sessionId);
+    const initializeSession = async () => {
+      if (isAuthenticated) {
+        const sessionId = sessionManager.getSessionId();
+        if (sessionId) {
+          fetchRecentAndFavs(sessionId);
+        }
       }
     };
 
-    window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
-  }, []);
+    initializeSession();
+    fetchTrendingMovies();
+    fetchAvailableMovies();
+  }, [isAuthenticated]);
 
   // Fetch movies from GNN model (non-authenticated)
   const fetchAvailableMovies = async () => {
@@ -131,11 +118,11 @@ const MovieForm: React.FC<MovieFormProps> = ({ onRecommendations }) => {
   const fetchRecentAndFavs = async (sessionId: string) => {
     try {
       const response = await axios.get(API_URLS.TRAKT_USER_HISTORY, {
-        headers: { 'X-Session-ID': sessionId }
+        headers: sessionManager.getAuthHeaders()
       });
       
-      if (response.data?.movies) {
-        setRecentAndFavs(response.data.movies);
+      if (response.data?.recently_watched_movies) {
+        setRecentAndFavs(response.data.recently_watched_movies);
       }
     } catch (error) {
       console.error('Error fetching user history:', error);
@@ -154,29 +141,6 @@ const MovieForm: React.FC<MovieFormProps> = ({ onRecommendations }) => {
     }
   };
 
-  // Handle Trakt authentication
-  const handleTraktAuth = async () => {
-    try {
-      setLoading(true);
-      const response = await axios.get(API_URLS.TRAKT_AUTH);
-      if (response.data?.auth_url) {
-        window.open(response.data.auth_url, 'trakt_auth', 'width=500,height=600');
-      }
-    } catch (error) {
-      setError('Failed to start authentication');
-      console.error('Auth error:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Handle logout
-  const handleLogout = () => {
-    localStorage.removeItem('trakt_session_id');
-    setSessionId(null);
-    setIsAuthenticated(false);
-    setRecentAndFavs([]);
-  };
 
   // Search movies (works for both Trakt and GNN movies)
   const handleSearch = async (_: any, query: string) => {
@@ -256,9 +220,11 @@ const MovieForm: React.FC<MovieFormProps> = ({ onRecommendations }) => {
       console.log('Submitting movies:', movieTitles);
 
       let response;
-      if (isAuthenticated && sessionId) {
-        response = await axios.post(API_URLS.RECOMMEND, {
+      if (isAuthenticated) {
+        response = await axios.post(API_URLS.TRAKT_RECOMMEND, {
           movies: movieTitles
+        }, {
+          headers: sessionManager.getAuthHeaders()
         });
       } else {
         response = await axios.post(API_URLS.RECOMMEND, {
@@ -309,46 +275,11 @@ const MovieForm: React.FC<MovieFormProps> = ({ onRecommendations }) => {
         Take Advantage of Your Social Network for Personalized Recommendations!
       </Typography>
 
-      {/* Dynamic spacing between header and authenticator */}
+      {/* Dynamic spacing between header and content */}
       <Box sx={{ 
-        height: { xs: 3, sm: 5, md: 7 }, // Responsive height
-        mb: { xs: 3, sm: 5, md: 7 }      // Responsive margin bottom
+        height: { xs: 2, sm: 3, md: 4 }, // Responsive height
+        mb: { xs: 2, sm: 3, md: 4 }      // Responsive margin bottom
       }} />
-
-      {/* Authentication Section */}
-      <Card sx={{ 
-        mb: 3, 
-        borderRadius: 3,
-        border: '1px solid rgba(255, 255, 255, 0.2)',
-        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
-        backdropFilter: 'blur(10px)',
-        backgroundColor: 'rgba(255, 255, 255, 0.9)'
-      }}>
-        <CardContent>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Box>
-              <Typography variant="h6" gutterBottom>
-                {isAuthenticated ? 'Connected to Trakt' : 'Movie Recommendation Options'}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {isAuthenticated 
-                  ? 'Get personalized recommendations based on your watch history and ratings!'
-                  : 'Use our AI model for recommendations, or connect Trakt for personalized suggestions.'
-                }
-              </Typography>
-            </Box>
-            <Button
-              variant={isAuthenticated ? "outlined" : "contained"}
-              color={isAuthenticated ? "error" : "primary"}
-              startIcon={isAuthenticated ? <Logout /> : <Login />}
-              onClick={isAuthenticated ? handleLogout : handleTraktAuth}
-              disabled={loading}
-            >
-              {isAuthenticated ? 'Disconnect' : 'Connect Trakt'}
-            </Button>
-          </Box>
-        </CardContent>
-      </Card>
 
       {/* Error Display */}
       {error && (

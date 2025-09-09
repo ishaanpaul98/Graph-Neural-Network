@@ -1,11 +1,11 @@
-from flask import Flask, request, jsonify, redirect, session, url_for
+from flask import Flask, request, jsonify, redirect, session, url_for, g
 from flask_cors import CORS
 import torch
 import json
 import os
 import numpy as np
 import secrets
-from typing import List, Dict
+from typing import List, Dict, Optional
 from dotenv import load_dotenv
 from NN.enhanced_mpgnn import EnhancedMPGNN
 from trakt_api import trakt_api
@@ -13,12 +13,13 @@ from session_manager import session_manager
 import time
 import threading
 from enhanced_recommendations import EnhancedRecommendationEngine
+from functools import wraps
 
 # Load environment variables from .env file
 load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = os.getenv('FLASK_SECRET_KEY', secrets.token_hex(16))
+app.secret_key = os.getenv('FLASK_SECRET_KEY', secrets.token_hex(32))
 
 # Configure CORS to allow requests from the frontend
 CORS(app, resources={
@@ -33,11 +34,37 @@ CORS(app, resources={
             "https://main.d2p9ieiqdwymip.amplifyapp.com",  # Your main branch Amplify domain
             "https://dev.d2p9ieiqdwymip.amplifyapp.com",  # Your dev branch Amplify domain
         ],
-        "methods": ["GET", "POST", "OPTIONS"],
-        "allow_headers": ["Content-Type", "Accept", "X-Session-ID", "Authorization"],
-        "supports_credentials": True
+        "methods": ["GET", "POST", "OPTIONS", "DELETE"],
+        "allow_headers": ["Content-Type", "Accept", "X-Session-ID", "Authorization", "X-Requested-With"],
+        "supports_credentials": True,
+        "expose_headers": ["X-Session-ID"]
     }
 })
+
+# Session validation decorator
+def require_session(f):
+    """Decorator to require valid session for protected endpoints"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        session_id = request.headers.get('X-Session-ID')
+        if not session_id:
+            return jsonify({'error': 'Session ID required'}), 401
+        
+        # Validate session
+        session_data = session_manager.get_session(session_id)
+        if not session_data:
+            return jsonify({'error': 'Invalid or expired session'}), 401
+        
+        # Store session info in g for use in the route
+        g.session_id = session_id
+        g.session_data = session_data
+        return f(*args, **kwargs)
+    return decorated_function
+
+# Session cleanup decorator
+def cleanup_expired_sessions():
+    """Clean up expired sessions periodically"""
+    session_manager.cleanup_expired_sessions()
 
 # Add request logging middleware
 @app.before_request
@@ -47,6 +74,14 @@ def log_request_info():
     print('URL:', request.url)
     print('Headers:', dict(request.headers))
     print('Body:', request.get_data())
+    
+    # Clean up expired sessions on each request (lightweight check)
+    if hasattr(g, 'session_cleanup_time'):
+        if time.time() - g.session_cleanup_time > 300:  # Clean up every 5 minutes
+            cleanup_expired_sessions()
+            g.session_cleanup_time = time.time()
+    else:
+        g.session_cleanup_time = time.time()
 
 @app.after_request
 def after_request(response):
@@ -202,6 +237,17 @@ def get_recommendations():
         top_k_indices = scores.topk(10).indices.tolist()
         recommended_movies = [movie_id_to_title[idx] for idx in top_k_indices]
         
+        #Get movie details from Trakt API
+        #Get movie id for movie name in recommended_movies
+        movie_details = [trakt_api.search_movies_and_shows(movie_title) for movie_title in recommended_movies]
+        print(f"Movie details: {movie_details}")
+        #Extract id from every movie in movie_details
+        movie_ids = []
+        for movie in movie_details:
+            for details in movie:
+                movie_ids.append(details['ids']['trakt'])
+        movie_details = [trakt_api.get_movie_details(movie_id) for movie_id in movie_ids]
+        print(f"Movie details: {movie_details}")
         print("\nFinal recommendations:", recommended_movies)
         return jsonify({
             'recommendations': recommended_movies
@@ -363,6 +409,7 @@ def trakt_search():
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/trakt/recommend', methods=['POST'])
+@require_session
 def trakt_recommend():
     """Get recommendations using Trakt data and GNN model"""
     try:
@@ -376,15 +423,8 @@ def trakt_recommend():
         if not isinstance(user_movies, list) or not (1 <= len(user_movies) <= 15):
             return jsonify({'error': 'Please provide between 1 and 15 movies'}), 400
         
-        # Get session ID from request
-        session_id = request.headers.get('X-Session-ID')
-        if not session_id:
-            return jsonify({'error': 'Session ID required'}), 401
-        
-        # Get access token
-        access_token = session_manager.get_access_token(session_id)
-        if not access_token:
-            return jsonify({'error': 'Invalid or expired session'}), 401
+        # Get access token from validated session
+        access_token = g.session_data['access_token']
         
         # First, try to get Trakt recommendations
         try:
@@ -636,18 +676,12 @@ def collect_trakt_data():
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/trakt/user-history', methods=['GET'])
+@require_session
 def trakt_user_history():
     """Get user's recently watched and favorite movies/shows from Trakt"""
     try:
-        # Get session ID from request
-        session_id = request.headers.get('X-Session-ID')
-        if not session_id:
-            return jsonify({'error': 'Session ID required'}), 401
-
-        # Get access token
-        access_token = session_manager.get_access_token(session_id)
-        if not access_token:
-            return jsonify({'error': 'Invalid or expired session'}), 401
+        # Get access token from validated session
+        access_token = g.session_data['access_token']
 
         # Get username (optional, default to 'me')
         username = request.args.get('username', 'me')
@@ -675,6 +709,67 @@ def trakt_user_history():
     except Exception as e:
         print(f"Error in trakt_user_history: {str(e)}")
         return jsonify({'error': str(e)}), 500
+
+@app.route('/api/session/logout', methods=['POST'])
+@require_session
+def logout():
+    """Logout and invalidate session"""
+    try:
+        session_id = g.session_id
+        success = session_manager.remove_session(session_id)
+        
+        if success:
+            return jsonify({'message': 'Successfully logged out'})
+        else:
+            return jsonify({'error': 'Failed to logout'}), 500
+            
+    except Exception as e:
+        print(f"Error in logout: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/session/status', methods=['GET'])
+@require_session
+def session_status():
+    """Get current session status and user info"""
+    try:
+        session_data = g.session_data
+        user_info = session_data.get('user_info', {})
+        
+        return jsonify({
+            'authenticated': True,
+            'session_id': g.session_id,
+            'user_info': user_info,
+            'expires_at': session_data.get('expires_at'),
+            'created_at': session_data.get('created_at')
+        })
+        
+    except Exception as e:
+        print(f"Error in session_status: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/session/validate', methods=['GET'])
+def validate_session():
+    """Validate session without requiring authentication (for checking if user is logged in)"""
+    try:
+        session_id = request.headers.get('X-Session-ID')
+        if not session_id:
+            return jsonify({'authenticated': False, 'message': 'No session ID provided'})
+        
+        session_data = session_manager.get_session(session_id)
+        if not session_data:
+            return jsonify({'authenticated': False, 'message': 'Invalid or expired session'})
+        
+        return jsonify({
+            'authenticated': True,
+            'session_id': session_id,
+            'user_info': session_data.get('user_info', {}),
+            'expires_at': session_data.get('expires_at'),
+            'created_at': session_data.get('created_at')
+        })
+        
+    except Exception as e:
+        print(f"Error in validate_session: {str(e)}")
+        return jsonify({'authenticated': False, 'error': str(e)})
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=8000)
