@@ -25,6 +25,7 @@ import {
 } from '@mui/icons-material';
 import axios from 'axios';
 import { API_URLS } from '../config/api';
+import { sessionManager } from '../utils/sessionManager';
 
 interface MovieFormProps {
   onRecommendations: (recommendations: string[]) => void;
@@ -83,19 +84,27 @@ const MovieForm: React.FC<MovieFormProps> = ({ onRecommendations }) => {
 
   // Initialize component
   useEffect(() => {
-    const storedSessionId = localStorage.getItem('trakt_session_id');
-    if (storedSessionId) {
-      setSessionId(storedSessionId);
-      setIsAuthenticated(true);
-      fetchRecentAndFavs(storedSessionId);
-    }
-    
+    const initializeSession = async () => {
+      // Check if we have a valid session
+      const isValid = await sessionManager.validateSession();
+      if (isValid) {
+        const sessionId = sessionManager.getSessionId();
+        if (sessionId) {
+          setSessionId(sessionId);
+          setIsAuthenticated(true);
+          fetchRecentAndFavs(sessionId);
+        }
+      }
+    };
+
+    initializeSession();
     fetchTrendingMovies();
     fetchAvailableMovies();
     
     // Listen for authentication success
     const handleMessage = (event: MessageEvent) => {
       if (event.data.type === 'TRAKT_AUTH_SUCCESS') {
+        sessionManager.setSession(event.data.sessionId);
         setSessionId(event.data.sessionId);
         setIsAuthenticated(true);
         setError(null);
@@ -131,11 +140,11 @@ const MovieForm: React.FC<MovieFormProps> = ({ onRecommendations }) => {
   const fetchRecentAndFavs = async (sessionId: string) => {
     try {
       const response = await axios.get(API_URLS.TRAKT_USER_HISTORY, {
-        headers: { 'X-Session-ID': sessionId }
+        headers: sessionManager.getAuthHeaders()
       });
       
-      if (response.data?.movies) {
-        setRecentAndFavs(response.data.movies);
+      if (response.data?.recently_watched_movies) {
+        setRecentAndFavs(response.data.recently_watched_movies);
       }
     } catch (error) {
       console.error('Error fetching user history:', error);
@@ -171,11 +180,19 @@ const MovieForm: React.FC<MovieFormProps> = ({ onRecommendations }) => {
   };
 
   // Handle logout
-  const handleLogout = () => {
-    localStorage.removeItem('trakt_session_id');
-    setSessionId(null);
-    setIsAuthenticated(false);
-    setRecentAndFavs([]);
+  const handleLogout = async () => {
+    try {
+      await sessionManager.logout();
+      setSessionId(null);
+      setIsAuthenticated(false);
+      setRecentAndFavs([]);
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Still clear local state even if server logout fails
+      setSessionId(null);
+      setIsAuthenticated(false);
+      setRecentAndFavs([]);
+    }
   };
 
   // Search movies (works for both Trakt and GNN movies)
@@ -257,8 +274,10 @@ const MovieForm: React.FC<MovieFormProps> = ({ onRecommendations }) => {
 
       let response;
       if (isAuthenticated && sessionId) {
-        response = await axios.post(API_URLS.RECOMMEND, {
+        response = await axios.post(API_URLS.TRAKT_RECOMMEND, {
           movies: movieTitles
+        }, {
+          headers: sessionManager.getAuthHeaders()
         });
       } else {
         response = await axios.post(API_URLS.RECOMMEND, {

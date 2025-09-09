@@ -124,7 +124,7 @@ class TraktAPI:
     
     def get_movie_details(self, movie_id: str, id_type: str = 'trakt') -> Dict:
         """Get detailed information about a movie"""
-        url = f"{self.base_url}/movies/{id_type}/{movie_id}"
+        url = f"{self.base_url}/search/{id_type}/{movie_id}"
         params = {'extended': 'full'}
         
         response = requests.get(url, params=params, headers=self.get_headers())
@@ -211,7 +211,7 @@ class TraktAPI:
         
         return results
     
-    def     get_movie_recommendations(self, access_token: str, limit: int = 10) -> List[Dict]:
+    def get_movie_recommendations(self, access_token: str, limit: int = 10) -> List[Dict]:
         """Get personalized movie recommendations for the user"""
         url = f"{self.base_url}/recommendations/movies"
         params = {'limit': limit, 'extended': 'full'}
