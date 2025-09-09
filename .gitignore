@@ -20,6 +20,7 @@ Web App/Back End/models/*
 Web App/Back End/NN/trakt_data/*
 Web App/Back End/__pycache__
 Web App/Back End/NN/__pycache__
+Web App/SESSION_ISOLATION_GUIDE.md
 .venv
 *.pem
 *.pem.backup
