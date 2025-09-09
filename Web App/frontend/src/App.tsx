@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
-import { Container, CssBaseline, ThemeProvider, createTheme } from '@mui/material'
+import { Container, CssBaseline, ThemeProvider, createTheme, Box } from '@mui/material'
 import MovieForm from './components/MovieForm'
 import Recommendations from './components/Recommendations'
 import AuthSuccess from './components/AuthSuccess'
+import Navbar from './components/Navbar'
 
 const theme = createTheme({
   palette: {
@@ -44,12 +45,16 @@ const theme = createTheme({
 
 function MainApp() {
   const [recommendations, setRecommendations] = useState<string[]>([])
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      <MovieForm onRecommendations={setRecommendations} />
-      <Recommendations recommendations={recommendations} />
-    </Container>
+    <Box sx={{ minHeight: '100vh', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
+      <Navbar onAuthChange={setIsAuthenticated} />
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        <MovieForm onRecommendations={setRecommendations} isAuthenticated={isAuthenticated} />
+        <Recommendations recommendations={recommendations} />
+      </Container>
+    </Box>
   )
 }
 
